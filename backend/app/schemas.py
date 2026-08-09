@@ -5,10 +5,20 @@
 所以这里给类型起别名 date_type，避免与计划系统的 date 字段名冲突。
 """
 from datetime import date as date_type
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
+
+
+def _utc_aware(dt: datetime) -> datetime:
+    """把 naive UTC 时间补上 UTC 时区。
+
+    数据库按 UTC 存 naive datetime，序列化时不带时区会导致前端
+    new Date() 按本地时区解析，早晨 8 点前发布的文章日期差一天。
+    补上时区后输出形如 2026-08-09T12:31:30Z，前端能正确转本地时间。
+    """
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
 
 
 # ---------------- 文章 ----------------
@@ -45,6 +55,10 @@ class ArticleRead(ArticleBase):
     created_at: datetime
     updated_at: datetime
 
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
 
 # ---------------- 计划 ----------------
 class PlanBase(BaseModel):
@@ -79,6 +93,10 @@ class PlanRead(PlanBase):
     id: int
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
 
 
 # ---------------- 认证 / 用户 ----------------

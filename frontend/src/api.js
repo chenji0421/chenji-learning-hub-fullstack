@@ -29,7 +29,9 @@ async function request(path, options = {}) {
     const detail = data?.detail;
     const msg =
       typeof detail === "string" ? detail : detail?.[0]?.msg || `请求失败（${res.status}）`;
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.status = res.status; // 附带状态码，调用方可区分 401 过期 vs 网络错误
+    throw err;
   }
   return data;
 }

@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     # 前端地址（用于 OAuth 回调跳转和 CORS）
     frontend_url: str = "http://localhost:5173"
 
+    # CORS 白名单：放行 localhost 和 127.0.0.1 两种写法的开发地址
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
     # SQLite 数据库文件路径
     database_url: str = "sqlite:///./chenji_hub.db"
 

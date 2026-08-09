@@ -1,0 +1,641 @@
+/* Chenji Learning Hub 全局样式 —— 简单、干净，不引入 UI 库 */
+:root {
+  --bg: #f7f5f0;
+  --card: #ffffff;
+  --text: #2b2b2b;
+  --muted: #8a8a8a;
+  --border: #e5e2da;
+  --primary: #8b5e3c;
+  --primary-dark: #6f4a2f;
+  --danger: #c0392b;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.app {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 头部 / 导航 ---------- */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.95rem;
+}
+
+.site-nav a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 4px 2px;
+}
+
+.site-nav a:hover {
+  color: var(--primary);
+}
+
+.nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.site-nav .nav-logout {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px 2px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.site-nav .nav-logout:hover {
+  color: var(--primary);
+}
+
+.avatar {
+  border-radius: 50%;
+}
+
+/* ---------- 布局 ---------- */
+.page {
+  flex: 1;
+}
+
+.site-footer {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin: 0 0 12px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* ---------- 通用元素 ---------- */
+.btn {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+.empty-state {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.loading {
+  color: var(--muted);
+  padding: 40px 0;
+  text-align: center;
+}
+
+.error-box {
+  background: #fdecea;
+  color: var(--danger);
+  border: 1px solid #f5c6c0;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin: 16px 0;
+}
+
+/* ---------- 首页 ---------- */
+.stat-cards {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 160px;
+  padding: 20px;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.stat-num {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.stat-label {
+  color: var(--muted);
+}
+
+.stat-hint {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+
+.home-links {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* ---------- 文章列表 ---------- */
+.article-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.article-card {
+  display: block;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.article-card:hover {
+  border-color: var(--primary);
+}
+
+.article-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.article-summary {
+  color: var(--muted);
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+}
+
+.article-date {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 6px;
+}
+
+.tag {
+  display: inline-block;
+  background: #f0e9df;
+  color: var(--primary-dark);
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 0.78rem;
+  margin-right: 8px;
+}
+
+/* ---------- 文章详情 ---------- */
+.back-link {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.article-detail {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+}
+
+.article-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.article-lead {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.article-body p {
+  margin: 10px 0;
+}
+
+.article-body li {
+  margin: 4px 0;
+}
+
+/* ---------- 计划 ---------- */
+.plan-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-card {
+  padding: 16px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.plan-date {
+  font-weight: 700;
+}
+
+.plan-title {
+  font-size: 1.05rem;
+}
+
+.status {
+  font-size: 0.78rem;
+  border-radius: 4px;
+  padding: 1px 8px;
+  margin-left: 8px;
+}
+
+.status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status.done {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status.todo {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.plan-goal {
+  color: var(--muted);
+}
+
+.plan-slots {
+  padding-left: 18px;
+}
+
+.plan-review {
+  color: var(--primary-dark);
+}
+
+/* ---------- 登录 ---------- */
+.login {
+  max-width: 520px;
+  margin: 40px auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+
+.login code {
+  background: #f0e9df;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* ---------- 管理后台 ---------- */
+.admin-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toast {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+}
+
+.admin-section {
+  margin: 28px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.admin-form .form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.admin-form label {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.admin-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.admin-actions button {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.admin-actions button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.admin-actions .danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* 文章状态徽章（管理后台列表） */
+.admin-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.badge-pub {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.badge-draft {
+  background: #fdf3e3;
+  color: #b26a00;
+}
+
+/* ---------- 公开计划：年表 / 月表 / 日计划 ---------- */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.nav-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  min-width: 90px;
+  text-align: center;
+}
+
+.year-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.month-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.month-card:hover {
+  border-color: var(--primary);
+}
+
+.month-name {
+  font-weight: 700;
+}
+
+.month-card .month-count {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.month-card.has .month-count {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* 月表日历 */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.cal-head {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 4px 0;
+}
+
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 76px;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.cal-cell.empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.cal-cell:hover {
+  border-color: var(--primary);
+}
+
+.cal-cell.has-plan {
+  border-color: var(--primary);
+  background: #fbf6ee;
+}
+
+.cal-day {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cal-title {
+  font-size: 0.78rem;
+  color: var(--primary-dark);
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 日计划详情 */
+.day-plan {
+  margin-top: 14px;
+}
+
+.day-plan-head {
+  margin-bottom: 6px;
+}
+
+.day-plan-head .status {
+  margin-left: 0;
+}
+
+.plan-edit-form {
+  margin-top: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #a93226;
+  color: #fff;
+}

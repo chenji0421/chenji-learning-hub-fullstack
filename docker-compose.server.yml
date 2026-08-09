@@ -1,0 +1,46 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    container_name: chenji_hub_backend
+    restart: unless-stopped
+    environment:
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GITHUB_OAUTH_CALLBACK_URL: ${GITHUB_OAUTH_CALLBACK_URL}
+      ADMIN_GITHUB_LOGIN: ${ADMIN_GITHUB_LOGIN:-chenji0421}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_EXPIRE_MINUTES: ${AUTH_EXPIRE_MINUTES:-10080}
+      FRONTEND_URL: ${FRONTEND_URL}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/chenji_hub.db}
+    volumes:
+      - chenji_data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/frontend.Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    container_name: chenji_hub_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_BIND:-127.0.0.1:18080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  chenji_data:

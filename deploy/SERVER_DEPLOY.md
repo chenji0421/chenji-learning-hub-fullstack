@@ -65,8 +65,25 @@ Use `deploy/nginx-host-example.conf` as the host-level Nginx site, then add HTTP
 ```bash
 cd /opt/chenji-learning-hub
 git pull --ff-only
-docker compose -f docker-compose.server.yml up -d --build
+chmod +x scripts/deploy-production.sh
+./scripts/deploy-production.sh
 ```
+
+## GitHub Actions deploy
+
+The repository includes `.github/workflows/deploy.yml`. It is manual-only at first, so the workflow will not fail before the server is ready. Add these repository secrets before running it:
+
+```text
+DEPLOY_HOST=47.242.176.227
+DEPLOY_USER=<server user>
+DEPLOY_PORT=22
+DEPLOY_PATH=/opt/chenji-learning-hub
+DEPLOY_SSH_KEY=<private deploy key>
+```
+
+The server-side `.env` file must still be created manually and must not be committed.
+
+After the first successful deployment, the workflow can be changed to run on every push to `main`.
 
 ## Backup
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, getToken } from "../api.js";
+import renderMarkdown from "../markdown.jsx";
 
 // tags 在表单里用逗号分隔的字符串编辑，提交时拆成数组
 const EMPTY_ARTICLE = {
@@ -213,328 +214,341 @@ export default function Admin({ user }) {
   const nextMonth = month === 12 ? `${year + 1}-01` : `${year}-${pad(month + 1)}`;
   const dayPlan = byDate[selectedDate] || null;
 
+  const draftCount = articles.filter((a) => a.status !== "published").length;
+
   return (
-    <div className="admin">
-      <div className="admin-head">
-        <h1>管理后台</h1>
+    <div className="admin workbench">
+      <div className="wb-head">
+        <div>
+          <h1>管理后台</h1>
+          <p className="muted">
+            工作台 · {user.username}（管理员）
+          </p>
+        </div>
         {message && <div className="toast">{message}</div>}
       </div>
-      <p className="muted">
-        当前登录：{user.username}（{user.is_admin ? "管理员" : "访客"}）
-      </p>
 
-      <section className="admin-section">
-        <h2>{editingArticle ? "编辑文章" : "新增文章"}</h2>
-        <form
-          className="admin-form"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div className="form-row">
-            <label>
-              标题
-              <input
-                value={articleForm.title}
-                onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
-                required
-              />
-            </label>
-            <label>
-              分类
-              <input
-                value={articleForm.category}
-                onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              摘要
-              <input
-                value={articleForm.summary}
-                onChange={(e) => setArticleForm({ ...articleForm, summary: e.target.value })}
-              />
-            </label>
-            <label>
-              标签（逗号分隔）
-              <input
-                value={articleForm.tagsInput}
-                onChange={(e) => setArticleForm({ ...articleForm, tagsInput: e.target.value })}
-                placeholder="GitHub Pages, 前端"
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              正文（Markdown：支持 # 标题、- 列表、{">"} 引用、段落）
-              <textarea
-                rows="10"
-                value={articleForm.content}
-                onChange={(e) => setArticleForm({ ...articleForm, content: e.target.value })}
-              />
-            </label>
-          </div>
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => submitArticle("published")}
-            >
-              {editingArticle ? "更新并发布" : "发布"}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => submitArticle("draft")}
-            >
-              {editingArticle ? "保存为草稿" : "保存草稿"}
-            </button>
-            {(editingArticle || editingPlan) && (
-              <button type="button" className="btn" onClick={cancelEdit}>
-                取消编辑
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
-
-      <section className="admin-section">
-        <h2>文章列表（{articles.length}）</h2>
-        {articles.length === 0 ? (
-          <p className="muted">还没有文章，用上面的表单创建第一篇。</p>
-        ) : (
-          <ul className="admin-list">
-            {articles.map((a) => (
-              <li key={a.id}>
-                <span className="admin-item">
-                  {a.status === "published" ? (
-                    <span className="badge badge-pub">已发布</span>
-                  ) : (
-                    <span className="badge badge-draft">草稿</span>
-                  )}
-                  {a.title}
-                  {a.tags && a.tags.length > 0 && (
-                    <span className="muted"> · {a.tags.join(" / ")}</span>
-                  )}
-                </span>
-                <span className="admin-actions">
-                  <button onClick={() => editArticle(a)}>编辑</button>
-                  <button className="danger" onClick={() => deleteArticle(a.id)}>
-                    删除
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="admin-section">
-        <h2>{editingPlan ? "编辑计划" : "新增计划"}</h2>
-        <form className="admin-form" id="admin-plan-form" onSubmit={submitPlan}>
-          <div className="form-row">
-            <label>
-              日期
-              <input
-                type="date"
-                value={planForm.date}
-                onChange={(e) => setPlanForm({ ...planForm, date: e.target.value })}
-                required
-              />
-            </label>
-            <label>
-              标题
-              <input
-                value={planForm.title}
-                onChange={(e) => setPlanForm({ ...planForm, title: e.target.value })}
-                required
-              />
-            </label>
-            <label>
-              状态
-              <select
-                value={planForm.status}
-                onChange={(e) => setPlanForm({ ...planForm, status: e.target.value })}
-              >
-                <option>进行中</option>
-                <option>已完成</option>
-                <option>未开始</option>
-              </select>
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              目标
-              <input
-                value={planForm.goal}
-                onChange={(e) => setPlanForm({ ...planForm, goal: e.target.value })}
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              上午
-              <input
-                value={planForm.morning}
-                onChange={(e) => setPlanForm({ ...planForm, morning: e.target.value })}
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              下午
-              <input
-                value={planForm.afternoon}
-                onChange={(e) => setPlanForm({ ...planForm, afternoon: e.target.value })}
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              晚上
-              <input
-                value={planForm.evening}
-                onChange={(e) => setPlanForm({ ...planForm, evening: e.target.value })}
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              复盘（完成后填写）
-              <textarea
-                rows="3"
-                value={planForm.review}
-                onChange={(e) => setPlanForm({ ...planForm, review: e.target.value })}
-              />
-            </label>
-          </div>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              {editingPlan ? "保存修改" : "创建计划"}
-            </button>
-            {(editingArticle || editingPlan) && (
-              <button type="button" className="btn" onClick={cancelEdit}>
-                取消编辑
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
-
-      <section className="admin-section">
-        <h2>计划月历</h2>
-        <p className="muted">
-          点击日期选中当天计划——已有计划可以编辑或删除，没有计划可以新建。
-        </p>
-        <div className="nav-bar">
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setPlanMonth(prevMonth)}
-          >
-            ◀ 上月
-          </button>
-          <span className="nav-label">
-            {year} 年 {month} 月
-          </span>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setPlanMonth(nextMonth)}
-          >
-            下月 ▶
-          </button>
+      <div className="wb-stats">
+        <div className="stat-card">
+          <div className="stat-num">{articles.length}</div>
+          <div className="stat-label">全部文章</div>
         </div>
-        <div className="cal-grid">
-          {WEEKDAYS.map((w) => (
-            <div key={w} className="cal-head">
-              {w}
-            </div>
-          ))}
-          {cells.map((c, i) =>
-            c === null ? (
-              <div key={`e${i}`} className="cal-cell empty" />
-            ) : (
-              <button
-                key={c.key}
-                type="button"
-                className={`cal-cell ${c.plan ? "has-plan" : ""} ${
-                  selectedDate === c.key ? "selected" : ""
-                }`}
-                onClick={() => setSelectedDate(c.key)}
-              >
-                <span className="cal-day">{c.day}</span>
-                {c.plan && <span className="cal-title">{c.plan.title}</span>}
-              </button>
-            )
-          )}
+        <div className="stat-card">
+          <div className="stat-num">{draftCount}</div>
+          <div className="stat-label">草稿</div>
         </div>
-        <div className="day-panel">
-          {dayPlan ? (
-            <>
-              <p>
-                <b>{selectedDate}</b> · {dayPlan.title}
-                <span
-                  className={`status ${STATUS_CLASS[dayPlan.status] || "pending"}`}
-                >
-                  {dayPlan.status}
-                </span>
-              </p>
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => editPlan(dayPlan)}
-                >
-                  编辑这条计划
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={() => deletePlan(selectedDate)}
-                >
-                  删除
-                </button>
+        <div className="stat-card">
+          <div className="stat-num">{plans.length}</div>
+          <div className="stat-label">公开计划</div>
+        </div>
+      </div>
+
+      <div className="wb-grid">
+        <section className="wb-card">
+          <h2>📝 文章管理</h2>
+          <div className="editor-layout">
+            <div className="editor-main">
+              <div className="form-group">
+                <label>标题</label>
+                <input
+                  value={articleForm.title}
+                  onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
+                  required
+                />
               </div>
-            </>
-          ) : (
-            <>
-              <p className="muted">{selectedDate} 这一天还没有计划。</p>
+              <div className="form-grid-2">
+                <div className="form-group">
+                  <label>分类</label>
+                  <input
+                    value={articleForm.category}
+                    onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>标签（逗号分隔）</label>
+                  <input
+                    value={articleForm.tagsInput}
+                    onChange={(e) => setArticleForm({ ...articleForm, tagsInput: e.target.value })}
+                    placeholder="GitHub Pages, 前端"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>摘要</label>
+                <input
+                  value={articleForm.summary}
+                  onChange={(e) => setArticleForm({ ...articleForm, summary: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>正文（Markdown：支持 # 标题、- 列表、{">"} 引用、段落）</label>
+                <textarea
+                  rows="14"
+                  value={articleForm.content}
+                  onChange={(e) => setArticleForm({ ...articleForm, content: e.target.value })}
+                />
+              </div>
               <div className="form-actions">
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={() => newPlanForDate(selectedDate)}
+                  onClick={() => submitArticle("published")}
                 >
-                  新建当天计划
+                  {editingArticle ? "更新并发布" : "发布"}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => submitArticle("draft")}
+                >
+                  {editingArticle ? "保存为草稿" : "保存草稿"}
+                </button>
+                {(editingArticle || editingPlan) && (
+                  <button type="button" className="btn" onClick={cancelEdit}>
+                    取消编辑
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="editor-preview">
+              <h3>实时预览</h3>
+              {articleForm.content.trim() ? (
+                <div className="article-body">{renderMarkdown(articleForm.content)}</div>
+              ) : (
+                <p className="empty-preview">在左侧输入正文，这里会实时渲染效果。</p>
+              )}
+            </div>
+          </div>
+
+          <h3 style={{ margin: "20px 0 10px" }}>文章列表（{articles.length}）</h3>
+          {articles.length === 0 ? (
+            <p className="muted">还没有文章，用上面的表单创建第一篇。</p>
+          ) : (
+            <ul className="admin-list">
+              {articles.map((a) => (
+                <li key={a.id}>
+                  <span className="admin-item">
+                    {a.status === "published" ? (
+                      <span className="badge badge-pub">已发布</span>
+                    ) : (
+                      <span className="badge badge-draft">草稿</span>
+                    )}
+                    {a.title}
+                    {a.tags && a.tags.length > 0 && (
+                      <span className="muted"> · {a.tags.join(" / ")}</span>
+                    )}
+                  </span>
+                  <span className="admin-actions">
+                    <button onClick={() => editArticle(a)}>编辑</button>
+                    <button className="danger" onClick={() => deleteArticle(a.id)}>
+                      删除
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="wb-card">
+          <h2>🗓️ 计划管理</h2>
+          <div className="plans-module-body">
+            <div className="plan-calendar">
+              <div className="nav-bar">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setPlanMonth(prevMonth)}
+                >
+                  ◀ 上月
+                </button>
+                <span className="nav-label">
+                  {year} 年 {month} 月
+                </span>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setPlanMonth(nextMonth)}
+                >
+                  下月 ▶
                 </button>
               </div>
-            </>
-          )}
-        </div>
-      </section>
+              <div className="cal-grid">
+                {WEEKDAYS.map((w) => (
+                  <div key={w} className="cal-head">
+                    {w}
+                  </div>
+                ))}
+                {cells.map((c, i) =>
+                  c === null ? (
+                    <div key={`e${i}`} className="cal-cell empty" />
+                  ) : (
+                    <button
+                      key={c.key}
+                      type="button"
+                      className={`cal-cell ${c.plan ? "has-plan" : ""} ${
+                        selectedDate === c.key ? "selected" : ""
+                      }`}
+                      onClick={() => setSelectedDate(c.key)}
+                    >
+                      <span className="cal-day">{c.day}</span>
+                      {c.plan && <span className="cal-title">{c.plan.title}</span>}
+                    </button>
+                  )
+                )}
+              </div>
+              <div className="day-panel">
+                {dayPlan ? (
+                  <>
+                    <p>
+                      <b>{selectedDate}</b> · {dayPlan.title}
+                      <span
+                        className={`status ${STATUS_CLASS[dayPlan.status] || "pending"}`}
+                      >
+                        {dayPlan.status}
+                      </span>
+                    </p>
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => editPlan(dayPlan)}
+                      >
+                        编辑这条计划
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={() => deletePlan(selectedDate)}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="muted">{selectedDate} 这一天还没有计划。</p>
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => newPlanForDate(selectedDate)}
+                      >
+                        新建当天计划
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
 
-      <section className="admin-section">
-        <h2>计划列表（{plans.length}）</h2>
-        {plans.length === 0 ? (
-          <p className="muted">还没有计划，用上面的表单创建第一条。</p>
-        ) : (
-          <ul className="admin-list">
-            {plans.map((p) => (
-              <li key={p.id}>
-                <span>
-                  {p.date} · {p.title}
-                </span>
-                <span className="admin-actions">
-                  <button onClick={() => editPlan(p)}>编辑</button>
-                  <button className="danger" onClick={() => deletePlan(p.date)}>
-                    删除
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+            <div className="plan-form-side">
+              <div>
+                <h3>{editingPlan ? "编辑计划" : "新建计划"}</h3>
+                <form className="admin-form" id="admin-plan-form" onSubmit={submitPlan}>
+                  <div className="form-group">
+                    <label>日期</label>
+                    <input
+                      type="date"
+                      value={planForm.date}
+                      onChange={(e) => setPlanForm({ ...planForm, date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>标题</label>
+                    <input
+                      value={planForm.title}
+                      onChange={(e) => setPlanForm({ ...planForm, title: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>状态</label>
+                    <select
+                      value={planForm.status}
+                      onChange={(e) => setPlanForm({ ...planForm, status: e.target.value })}
+                    >
+                      <option>进行中</option>
+                      <option>已完成</option>
+                      <option>未开始</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>目标</label>
+                    <input
+                      value={planForm.goal}
+                      onChange={(e) => setPlanForm({ ...planForm, goal: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>上午</label>
+                    <input
+                      value={planForm.morning}
+                      onChange={(e) => setPlanForm({ ...planForm, morning: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>下午</label>
+                    <input
+                      value={planForm.afternoon}
+                      onChange={(e) => setPlanForm({ ...planForm, afternoon: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>晚上</label>
+                    <input
+                      value={planForm.evening}
+                      onChange={(e) => setPlanForm({ ...planForm, evening: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>复盘（完成后填写）</label>
+                    <textarea
+                      rows="3"
+                      value={planForm.review}
+                      onChange={(e) => setPlanForm({ ...planForm, review: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button type="submit" className="btn btn-primary">
+                      {editingPlan ? "保存修改" : "创建计划"}
+                    </button>
+                    {(editingArticle || editingPlan) && (
+                      <button type="button" className="btn" onClick={cancelEdit}>
+                        取消编辑
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              <div>
+                <h3>计划列表（{plans.length}）</h3>
+                {plans.length === 0 ? (
+                  <p className="muted">还没有计划，用上面的表单创建第一条。</p>
+                ) : (
+                  <ul className="admin-list">
+                    {plans.map((p) => (
+                      <li key={p.id}>
+                        <span>
+                          {p.date} · {p.title}
+                        </span>
+                        <span className="admin-actions">
+                          <button onClick={() => editPlan(p)}>编辑</button>
+                          <button className="danger" onClick={() => deletePlan(p.date)}>
+                            删除
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

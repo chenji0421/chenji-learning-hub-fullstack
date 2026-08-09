@@ -1,23 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
-
-// 极简 Markdown 渲染：只支持 #/## 标题、- 无序列表、段落。
-// 第一版不引入 Markdown 库，够用即可。
-function renderMarkdown(text) {
-  const lines = (text || "").split("\n");
-  const out = [];
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const key = out.length;
-    if (trimmed.startsWith("# ")) out.push(<h2 key={key}>{trimmed.slice(2)}</h2>);
-    else if (trimmed.startsWith("## ")) out.push(<h3 key={key}>{trimmed.slice(3)}</h3>);
-    else if (trimmed.startsWith("- ")) out.push(<li key={key}>{trimmed.slice(2)}</li>);
-    else if (trimmed.startsWith("> ")) out.push(<blockquote key={key}>{trimmed.slice(2)}</blockquote>);
-    else out.push(<p key={key}>{trimmed}</p>);
-  }
-  return out;
-}
+import renderMarkdown from "../markdown.jsx";
 
 export default function ArticleDetail({ id }) {
   const [article, setArticle] = useState(null);

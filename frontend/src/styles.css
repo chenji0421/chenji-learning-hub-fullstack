@@ -23,13 +23,150 @@ body {
   line-height: 1.7;
 }
 
-.app {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 0 20px;
+/* ---------- 布局骨架：左侧竖向 sidebar + 右侧内容区 ---------- */
+.app-shell {
+  display: flex;
   min-height: 100vh;
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar .logo {
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none;
+  color: var(--text);
+  padding: 4px 8px;
+  line-height: 1.4;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sidebar-nav a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.sidebar-nav a:hover {
+  background: var(--bg);
+  color: var(--primary);
+}
+
+.sidebar-nav a.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sidebar-foot {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+.sidebar-user-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar .nav-logout {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.sidebar .nav-logout:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.sidebar .site-footer {
+  padding: 0;
+  border: none;
+  margin: 0;
+  text-align: left;
+  font-size: 0.75rem;
+}
+
+.main-area {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px 48px;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar .logo {
+    margin-bottom: 0;
+  }
+  .sidebar-nav {
+    flex-direction: row;
+    flex: none;
+    flex-wrap: wrap;
+  }
+  .sidebar-foot {
+    margin-left: auto;
+    border-top: none;
+    padding-top: 0;
+    flex-direction: row;
+    align-items: center;
+  }
+  .main-area {
+    padding: 20px 16px 40px;
+  }
 }
 
 /* ---------- 头部 / 导航 ---------- */
@@ -675,4 +812,159 @@ button.cal-cell {
 .btn-danger:hover {
   background: #a93226;
   color: #fff;
+}
+
+/* ---------- 管理后台工作台布局 ---------- */
+.wb-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.wb-head h1 {
+  margin-bottom: 4px;
+}
+
+.wb-head p {
+  margin: 0;
+}
+
+.wb-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.wb-stats .stat-card {
+  min-width: 0;
+  padding: 16px;
+}
+
+.wb-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.wb-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.wb-card > h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---------- 文章编辑器：表单 + 实时预览分栏 ---------- */
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.editor-main {
+  min-width: 0;
+}
+
+.editor-preview {
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.editor-preview h3 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.editor-preview .empty-preview {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+}
+
+.form-group textarea {
+  resize: vertical;
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  line-height: 1.7;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ---------- 计划管理：以月历为主，表单与列表在侧边 ---------- */
+.plans-module-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.plan-calendar {
+  min-width: 0;
+}
+
+.plan-calendar .nav-bar {
+  margin: 0 0 12px;
+}
+
+.plan-form-side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.plan-form-side h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+@media (max-width: 960px) {
+  .editor-layout,
+  .plans-module-body {
+    grid-template-columns: 1fr;
+  }
 }

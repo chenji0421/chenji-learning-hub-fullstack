@@ -33,7 +33,11 @@ export default function App() {
       api
         .me()
         .then(setUser)
-        .catch(() => setUser(null));
+        .catch((e) => {
+          // token 过期/无效时清掉本地 token，否则管理页会卡在「正在获取登录状态…」
+          if (e.status === 401) setToken(null);
+          setUser(null);
+        });
     };
     loadUser();
     const onAuth = () => loadUser();
@@ -70,34 +74,67 @@ export default function App() {
     page = <Home />;
   }
 
+  // 左侧导航高亮判断
+  const isActive = (key) => {
+    if (key === "") return route === "" || route === "home";
+    if (key === "articles") return route === "articles" || route.startsWith("articles/");
+    if (key === "plans") return route === "plans" || route.startsWith("plans/");
+    if (key === "admin") return route === "admin";
+    if (key === "login") return route === "login";
+    return false;
+  };
+
   return (
-    <div className="app">
-      <header className="site-header">
+    <div className="app-shell">
+      <aside className="sidebar">
         <a href="#/" className="logo">
           📚 Chenji Learning Hub
         </a>
-        <nav className="site-nav">
-          <a href="#/">首页</a>
-          <a href="#/articles">文章</a>
-          <a href="#/plans">计划</a>
+        <nav className="sidebar-nav">
+          <a href="#/" className={isActive("") ? "active" : ""}>
+            首页
+          </a>
+          <a href="#/articles" className={isActive("articles") ? "active" : ""}>
+            文章
+          </a>
+          <a href="#/plans" className={isActive("plans") ? "active" : ""}>
+            计划
+          </a>
           {user ? (
-            <>
-              <a href="#/admin">管理</a>
-              <span className="nav-user" title={user.username}>
-                <img src={user.avatar_url} alt="" width="22" height="22" className="avatar" />
-                {user.username}
-              </span>
-              <button type="button" className="nav-logout" onClick={handleLogout}>
-                退出
-              </button>
-            </>
+            <a href="#/admin" className={isActive("admin") ? "active" : ""}>
+              管理
+            </a>
           ) : (
-            <a href="#/login">登录</a>
+            <a href="#/login" className={isActive("login") ? "active" : ""}>
+              登录
+            </a>
           )}
         </nav>
-      </header>
-      <main className="page">{page}</main>
-      <footer className="site-footer">Chenji Learning Hub · FastAPI + React + SQLite</footer>
+        <div className="sidebar-foot">
+          <div className="sidebar-user">
+            {user ? (
+              <>
+                <img src={user.avatar_url} alt="" width="28" height="28" className="avatar" />
+                <span className="sidebar-user-name" title={user.username}>
+                  {user.username}
+                </span>
+                <button type="button" className="nav-logout" onClick={handleLogout}>
+                  退出
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="muted">未登录</span>
+                <a href="#/login" className="nav-logout">
+                  去登录
+                </a>
+              </>
+            )}
+          </div>
+          <div className="site-footer">FastAPI + React + SQLite</div>
+        </div>
+      </aside>
+      <main className="main-area">{page}</main>
     </div>
   );
 }

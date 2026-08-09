@@ -20,9 +20,14 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# CORS 白名单：开发默认放行 localhost；部署时通过 FRONTEND_URL 添加线上前端域名
+allow_origins = list(settings.cors_origins)
+if settings.frontend_url and settings.frontend_url not in allow_origins:
+    allow_origins.append(settings.frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

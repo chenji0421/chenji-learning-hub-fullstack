@@ -60,8 +60,14 @@ chenji-learning-hub-fullstack/
 │   │       ├── Login.jsx
 │   │       └── Admin.jsx
 │   ├── index.html
+│   ├── vercel.json         # Vercel 部署配置（指定前端目录与构建命令）
 │   ├── vite.config.js
 │   └── package.json
+├── scripts/                  # 数据备份 / 恢复脚本
+│   ├── backup_db.py          # 备份 chenji_hub.db 到 backups/
+│   └── restore_db.py         # 从 backups/ 恢复数据库
+├── backups/                  # 数据库备份目录（脚本自动生成，已 gitignore）
+├── render.yaml               # Render 部署配置（后端服务 + PostgreSQL）
 ├── .env.example              # 环境变量模板（密钥不提交）
 ├── .gitignore
 └── README.md
@@ -124,6 +130,51 @@ npm run dev
 打开 http://localhost:5173
 
 开发时 Vite 会把 `/api` 代理到 `http://localhost:8000`，无需额外配置。
+
+---
+
+## 本地数据保存在哪里
+
+### 数据库文件
+
+文章、计划、用户信息（GitHub 登录账号）全部保存在 **SQLite 数据库文件**里：
+
+- **文件位置**：`backend/chenji_hub.db`
+- **三张表**：
+  - `articles` —— 文章（含草稿 / 已发布）
+  - `plans` —— 每日计划
+  - `users` —— GitHub 登录用户
+
+`DATABASE_URL` 默认是 `sqlite:///./chenji_hub.db`，在 `backend/` 目录下启动后端时，
+文件就落在 `backend/chenji_hub.db`。第一版不需要额外的数据库服务，表在启动时自动创建。
+
+### 关闭 VS Code 会怎样
+
+- 关掉 VS Code / 终端后，`uvicorn`（后端）和 `vite`（前端）进程随之结束，**网站服务会停止**——此时 `http://localhost:5173` 就访问不到了。
+- 但**代码和数据库文件不会消失**：`chenji_hub.db` 原封不动地躺在磁盘上，下次启动后端 + 前端，之前写的文章、计划、登录过的用户都还在。
+
+### 备份与恢复
+
+提供两个脚本，把数据库复制到 `backups/` 目录（该目录已加入 `.gitignore`，不会上传 GitHub）：
+
+```bash
+# 备份：复制 backend/chenji_hub.db 到 backups/（时间戳命名）
+python scripts/backup_db.py
+
+# 只保留最近 30 份备份，自动清理更旧的
+python scripts/backup_db.py --keep 30
+
+# 查看现有备份
+python scripts/restore_db.py --list
+
+# 用最新备份恢复（会先确认，恢复前自动给当前库留底）
+python scripts/restore_db.py
+
+# 用指定备份恢复，跳过确认
+python scripts/restore_db.py --backup chenji_hub_20260809_203000.db --yes
+```
+
+> 建议定期备份：数据只有这一份，误删 / 误改没有撤销。手动跑或者加个计划任务（如每天定时执行 `backup_db.py`）都行。
 
 ---
 
@@ -201,9 +252,93 @@ GitHub Pages 只托管**静态文件**，而这个全栈项目需要一个常驻
 
 ---
 
+## 部署到 Vercel + Render（推荐）
+
+上一节提到**平台托管**，这里展开成具体方案：**前端放 Vercel（免费、全球 CDN），后端放 Render（免费、跑 FastAPI 进程），数据库用 Render 的 PostgreSQL**。
+
+```
+┌──────────────────┐      HTTPS       ┌─────────────────────────┐
+│  前端 React + Vite │ ───────────────▶ │  后端 FastAPI（Render）  │
+│  Vercel          │   /api/...       │  /api/auth/...          │
+└──────────────────┘                  └────────────┬────────────┘
+                                                   │ DATABASE_URL
+                                          ┌────────▼────────┐
+                                          │  PostgreSQL      │
+                                          │  Render 数据库    │
+                                          └─────────────────┘
+```
+
+项目已带好部署配置文件：`render.yaml`（后端 Web 服务 + PostgreSQL 数据库）和 `frontend/vercel.json`（指定前端目录与构建命令）。
+
+### 第 1 步：创建线上版 GitHub OAuth App
+
+在 GitHub → Settings → Developer settings → OAuth Apps 新建（或编辑现有）：
+
+- **Homepage URL**：`https://<你的前端域名>.vercel.app`
+- **Authorization callback URL**：`https://<你的后端域名>.onrender.com/api/auth/github/callback`
+- 记下 **Client ID** 和 **Client Secret**
+
+> 域名要等下面部署完才知道，可以先占位，第 5 步再回填。
+
+### 第 2 步：部署后端到 Render
+
+**方式 A：Blueprint（推荐，一条命令）**
+
+1. Render 控制台 → **New → Blueprint**
+2. 选择本仓库 → Render 自动读取 `render.yaml`，一次创建后端服务 + PostgreSQL 数据库
+3. 部署完成后在面板填密钥：`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`AUTH_SECRET`（这三项在 `render.yaml` 里是 `sync: false`）
+
+**方式 B：手动**
+
+1. **New → Web Service** → 选仓库，`Root Directory` 填 `backend`
+2. Build Command：`pip install -r requirements.txt`
+3. Start Command：`uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. 再 **New → PostgreSQL** 建一个免费数据库，把 `Internal Database URL` 填进后端的 `DATABASE_URL`
+
+### 第 3 步：配置后端环境变量
+
+在后端服务的环境变量里配置（`render.yaml` 里 `value` 是占位符，实际以面板为准）：
+
+| 变量 | 线上值 |
+|---|---|
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | 第 1 步 GitHub OAuth App 的密钥 |
+| `GITHUB_OAUTH_CALLBACK_URL` | `https://<后端域名>.onrender.com/api/auth/github/callback` |
+| `ADMIN_GITHUB_LOGIN` | `chenji0421` |
+| `AUTH_SECRET` | 随机长字符串（`openssl rand -hex 32` 生成） |
+| `FRONTEND_URL` | `https://<前端域名>.vercel.app` |
+| `DATABASE_URL` | Render PostgreSQL 连接串（Blueprint 方式自动注入） |
+
+> `psycopg2-binary` 已加进 `requirements.txt`，PostgreSQL 驱动开箱即用；`database.py` 已按连接串前缀自动切换 SQLite / PostgreSQL 的连接参数。后端 CORS 白名单会自动并入 `FRONTEND_URL`，线上前端可直接跨域。
+
+### 第 4 步：部署前端到 Vercel
+
+1. Vercel → **New Project** → 导入本仓库
+2. Framework Preset 选 **Vite**（`frontend/vercel.json` 已指定 `rootDirectory` 和构建命令）
+3. 添加环境变量 **`VITE_API_URL=https://<后端域名>.onrender.com`**
+4. **Deploy**
+
+> `VITE_API_URL` 会在**构建时**内联进打包产物（见 `frontend/src/api.js`），所以一定要在 Vercel 面板里填，不能只写本地 `.env`。
+> 前端用的是 hash 路由（`#/`），Vercel 不需要额外 rewrites。
+
+### 第 5 步：回填真实域名
+
+部署完成后把实际域名回填：
+
+- GitHub OAuth App 的 **Homepage / Callback URL**
+- Render 后端的 **`FRONTEND_URL`** 和 **`GITHUB_OAUTH_CALLBACK_URL`**（`render.yaml` 里是占位符）
+- 改完触发重新部署，让改动生效
+
+### 验证上线
+
+- 打开 `https://<前端域名>.vercel.app` → 首页显示「后端连接正常」
+- 点「管理 · 登录」→ GitHub 授权 → 跳回 → 进 `/#/admin` 能写文章 / 计划
+- `https://<后端域名>.onrender.com/api/health` 返回 `{"status":"ok",...}`
+
+---
+
 ## 安全提醒
 
-- **不要把密钥提交到 GitHub**：`.gitignore` 已忽略 `.env`、`.venv`、`node_modules`、`*.db`、`dist`，只有 `.env.example` 模板会被提交
+- **不要把密钥提交到 GitHub**：`.gitignore` 已忽略 `.env`、`.venv`、`node_modules`、`*.db`、`dist`、`backups/`，只有 `.env.example` 模板会被提交
 - `.env` 里的 `GITHUB_CLIENT_SECRET` 和 `AUTH_SECRET` 一旦泄露，要立刻去 GitHub 开发者设置里**吊销并重新生成**
 - 部署时一定要把 `AUTH_SECRET` 改成随机长字符串（可用 `openssl rand -hex 32` 生成）
 

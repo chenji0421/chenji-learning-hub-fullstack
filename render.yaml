@@ -1,0 +1,43 @@
+# Render 部署配置（Blueprint）：后端 Web 服务 + PostgreSQL 数据库
+#
+# 用法：
+#   1. 在 Render 控制台用「New → Blueprint」导入本仓库，render.yaml 会被自动识别
+#   2. 有 sync: false 的变量（密钥）需要部署后在 Render 面板手动填真实值
+#   3. 部署完成后，把实际生成的后端/前端域名回填到 GITHUB_OAUTH_CALLBACK_URL 和 FRONTEND_URL
+#
+# 不写任何真实密钥进仓库。
+
+services:
+  - type: web
+    name: chenji-hub-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    healthCheckPath: /api/health
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GITHUB_CLIENT_ID
+        sync: false # 在 Render 面板填 GitHub OAuth App 的 Client ID
+      - key: GITHUB_CLIENT_SECRET
+        sync: false # 在 Render 面板填 Client Secret，绝不要写进仓库
+      - key: GITHUB_OAUTH_CALLBACK_URL
+        value: https://your-backend.onrender.com/api/auth/github/callback # 部署后改成真实后端地址
+      - key: ADMIN_GITHUB_LOGIN
+        value: chenji0421
+      - key: AUTH_SECRET
+        sync: false # 在 Render 面板生成随机长字符串（openssl rand -hex 32）
+      - key: AUTH_EXPIRE_MINUTES
+        value: 10080
+      - key: FRONTEND_URL
+        value: https://your-frontend.vercel.app # 部署后改成真实前端地址（Vercel）
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chenji-hub-db
+          property: connectionString
+
+databases:
+  - name: chenji-hub-db
+    plan: free
+    databaseName: chenji_hub
+    user: chenji_hub

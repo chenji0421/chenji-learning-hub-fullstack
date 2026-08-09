@@ -21,6 +21,11 @@ const EMPTY_PLAN = {
   status: "进行中",
 };
 
+// 计划月历用的小工具（与 Plans.jsx 保持一致的配色约定）
+const STATUS_CLASS = { 进行中: "pending", 已完成: "done", 未开始: "todo" };
+const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+const pad = (n) => String(n).padStart(2, "0");
+
 export default function Admin({ user }) {
   const [articles, setArticles] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -29,6 +34,15 @@ export default function Admin({ user }) {
   const [editingArticle, setEditingArticle] = useState(null);
   const [editingPlan, setEditingPlan] = useState(null);
   const [message, setMessage] = useState("");
+  // 计划月历：当前展示的月份 + 选中的日期（默认今天）
+  const [planMonth, setPlanMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+  });
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  });
 
   const refresh = () => {
     api.listArticles().then(setArticles).catch(() => {});
@@ -42,10 +56,10 @@ export default function Admin({ user }) {
   if (!getToken()) {
     return (
       <div className="empty-state">
-        <h2>需要登录</h2>
-        <p>登录后才能进入管理后台。</p>
+        <h2>请先使用 GitHub 登录</h2>
+        <p>登录后才能进入管理后台，并管理文章和计划。</p>
         <a className="btn btn-primary" href="#/login">
-          去登录
+          前往 GitHub 登录
         </a>
       </div>
     );
@@ -175,6 +189,30 @@ export default function Admin({ user }) {
     }
   };
 
+  // 从月历点击「新建当天计划」：把表单日期预填成选中的那一天
+  const newPlanForDate = (date) => {
+    setEditingArticle(null);
+    setEditingPlan(null);
+    setPlanForm({ ...EMPTY_PLAN, date });
+    document.getElementById("admin-plan-form")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // 计划月历：按日期索引 + 当前月的格子数据
+  const byDate = {};
+  for (const p of plans) byDate[p.date] = p;
+  const [year, month] = planMonth.split("-").map(Number);
+  const firstWeekday = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${planMonth}-${pad(d)}`;
+    cells.push({ key, day: d, plan: byDate[key] || null });
+  }
+  const prevMonth = month === 1 ? `${year - 1}-12` : `${year}-${pad(month - 1)}`;
+  const nextMonth = month === 12 ? `${year + 1}-01` : `${year}-${pad(month + 1)}`;
+  const dayPlan = byDate[selectedDate] || null;
+
   return (
     <div className="admin">
       <div className="admin-head">
@@ -292,7 +330,7 @@ export default function Admin({ user }) {
 
       <section className="admin-section">
         <h2>{editingPlan ? "编辑计划" : "新增计划"}</h2>
-        <form className="admin-form" onSubmit={submitPlan}>
+        <form className="admin-form" id="admin-plan-form" onSubmit={submitPlan}>
           <div className="form-row">
             <label>
               日期
@@ -380,6 +418,99 @@ export default function Admin({ user }) {
             )}
           </div>
         </form>
+      </section>
+
+      <section className="admin-section">
+        <h2>计划月历</h2>
+        <p className="muted">
+          点击日期选中当天计划——已有计划可以编辑或删除，没有计划可以新建。
+        </p>
+        <div className="nav-bar">
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setPlanMonth(prevMonth)}
+          >
+            ◀ 上月
+          </button>
+          <span className="nav-label">
+            {year} 年 {month} 月
+          </span>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setPlanMonth(nextMonth)}
+          >
+            下月 ▶
+          </button>
+        </div>
+        <div className="cal-grid">
+          {WEEKDAYS.map((w) => (
+            <div key={w} className="cal-head">
+              {w}
+            </div>
+          ))}
+          {cells.map((c, i) =>
+            c === null ? (
+              <div key={`e${i}`} className="cal-cell empty" />
+            ) : (
+              <button
+                key={c.key}
+                type="button"
+                className={`cal-cell ${c.plan ? "has-plan" : ""} ${
+                  selectedDate === c.key ? "selected" : ""
+                }`}
+                onClick={() => setSelectedDate(c.key)}
+              >
+                <span className="cal-day">{c.day}</span>
+                {c.plan && <span className="cal-title">{c.plan.title}</span>}
+              </button>
+            )
+          )}
+        </div>
+        <div className="day-panel">
+          {dayPlan ? (
+            <>
+              <p>
+                <b>{selectedDate}</b> · {dayPlan.title}
+                <span
+                  className={`status ${STATUS_CLASS[dayPlan.status] || "pending"}`}
+                >
+                  {dayPlan.status}
+                </span>
+              </p>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => editPlan(dayPlan)}
+                >
+                  编辑这条计划
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => deletePlan(selectedDate)}
+                >
+                  删除
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="muted">{selectedDate} 这一天还没有计划。</p>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => newPlanForDate(selectedDate)}
+                >
+                  新建当天计划
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </section>
 
       <section className="admin-section">

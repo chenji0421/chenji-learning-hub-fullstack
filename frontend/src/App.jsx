@@ -15,6 +15,7 @@ import Account from "./pages/Account.jsx";
 import Login from "./pages/Login.jsx";
 import Admin from "./pages/Admin.jsx";
 import MiniPlayer from "./components/MiniPlayer.jsx";
+import { MusicPlayerProvider } from "./context/MusicPlayerContext.jsx";
 
 const THEME_KEY = "chl_theme";
 const COLLAPSE_KEY = "chl_sidebar_collapsed";
@@ -172,8 +173,9 @@ export default function App() {
   const navItems = [...publicItems, ...authItems];
 
   return (
-    <div className="app-shell">
-      <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
+    <MusicPlayerProvider>
+      <div className="app-shell">
+        <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
         <div className="sidebar-head">
           <a href="#/" className="logo" title="沉积 Learning Hub">
             <span className="logo-mark">沉</span>
@@ -303,8 +305,9 @@ export default function App() {
           </div>
         </div>
 
-        <div className="page-content">{page}</div>
-      </main>
-    </div>
+            <div className="page-content">{page}</div>
+          </main>
+        </div>
+      </MusicPlayerProvider>
   );
 }

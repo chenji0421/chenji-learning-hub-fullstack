@@ -3,6 +3,9 @@ import { api, getToken } from "../api.js";
 import renderMarkdown from "../markdown.jsx";
 import { changelog } from "../data/changelog.js";
 import NotesAdmin from "../components/NotesAdmin.jsx";
+import SprintTimeBlocks from "../components/sprint/SprintTimeBlocks.jsx";
+import SprintCompletions from "../components/sprint/SprintCompletions.jsx";
+import SprintSleep from "../components/sprint/SprintSleep.jsx";
 
 // tags 在表单里用逗号分隔的字符串编辑，提交时拆成数组
 const EMPTY_ARTICLE = {
@@ -51,6 +54,7 @@ const ADMIN_TABS = [
   { key: "library", icon: "🗃️", label: "内容库" },
   { key: "notes", icon: "📚", label: "学习笔记" },
   { key: "plans", icon: "🗓️", label: "计划管理" },
+  { key: "sprint", icon: "🚀", label: "阶段计划" },
   { key: "ops", icon: "🛠️", label: "运维状态" },
 ];
 
@@ -65,6 +69,8 @@ export default function Admin({ user }) {
   const [message, setMessage] = useState(null);
   // 内容库：文章状态筛选
   const [articleFilter, setArticleFilter] = useState("all");
+  // 阶段计划管理：二级 tab（时间安排 / 完成度 / 睡眠 / 其他）
+  const [sprintSubTab, setSprintSubTab] = useState("time");
   // 计划月历：当前展示的月份 + 选中的日期（默认今天）
   const [planMonth, setPlanMonth] = useState(() => {
     const now = new Date();
@@ -782,6 +788,62 @@ export default function Admin({ user }) {
               </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* ============ 阶段计划管理 ============ */}
+      {tab === "sprint" && (
+        <section className="wb-card">
+          <div className="library-head">
+            <div>
+              <h2>🚀 阶段计划管理</h2>
+              <p className="muted">
+                管理阶段冲刺计划的真实记录（时间安排 / 完成记录 / 睡眠记录）。课程 / 应用 / 记账 / 饮食 / 身体暂未接入。
+              </p>
+            </div>
+          </div>
+          <div className="filter-bar">
+            {[
+              { key: "time", label: "⏰ 时间安排" },
+              { key: "completion", label: "✅ 完成记录" },
+              { key: "sleep", label: "🌙 睡眠记录" },
+              { key: "more", label: "🧩 其他" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className={`filter-chip${sprintSubTab === t.key ? " active" : ""}`}
+                onClick={() => setSprintSubTab(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {sprintSubTab === "time" && <SprintTimeBlocks isAdmin />}
+          {sprintSubTab === "completion" && <SprintCompletions isAdmin />}
+          {sprintSubTab === "sleep" && <SprintSleep isAdmin />}
+
+          {sprintSubTab === "more" && (
+            <div className="sprint-more-grid">
+              {[
+                { icon: "📖", title: "课程" },
+                { icon: "📱", title: "应用" },
+                { icon: "💰", title: "记账" },
+                { icon: "🍱", title: "饮食" },
+                { icon: "⚖️", title: "身体" },
+              ].map((m) => (
+                <div key={m.title} className="sprint-more-card">
+                  <h3>
+                    {m.icon} {m.title}
+                  </h3>
+                  <p className="muted">
+                    该模块暂未接入，后台暂不提供假表单。后续接入真实后端后再开放管理。
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

@@ -7,15 +7,29 @@
 //
 // 字段：
 // - version：版本号，例如 v1.3.2
-// - date：更新时间（北京时间），格式 YYYY-MM-DD HH:mm
+// - date：更新时间（只写日期，不写具体时间），格式 YYYY-MM-DD
+//   维护规则：如果没有明确确认过具体小时分钟，只写日期 YYYY-MM-DD，不允许自行编造时分
 // - type：类型，例如 新增 / 优化 / 修复 / 部署 / 文档
 // - title：本次更新标题
 // - summary：一句话说明
 // - items：具体更新点
 export const changelog = [
   {
+    version: "v1.4.1",
+    date: "2026-08-10",
+    type: "新增",
+    title: "工具箱新增 ChatGPT 和 B站入口",
+    summary: "在工具箱中新增常用网站入口，方便从沉积 Learning Hub 快速打开 AI 工具和学习视频平台。",
+    items: [
+      "新增「AI 与常用网站」工具箱分组",
+      "添加 ChatGPT 入口，用于 AI 对话、查资料、整理思路和辅助学习",
+      "添加哔哩哔哩 / B站入口，用于查找学习视频、公开课和教程",
+      "保持工具箱原有项目入口、内容维护、常用命令、故障排查和学习资料不变"
+    ],
+  },
+  {
     version: "v1.4.0",
-    date: "2026-08-10 22:30",
+    date: "2026-08-10",
     type: "新增",
     title: "新增更新日志页面",
     summary: "网站新增「更新日志」页面，集中展示从上线到现在的每一次版本演进。",
@@ -29,7 +43,7 @@ export const changelog = [
   },
   {
     version: "v1.3.3",
-    date: "2026-08-10 21:40",
+    date: "2026-08-10",
     type: "修复",
     title: "修复计划页白屏问题",
     summary: "修复计划页 React Hooks 调用顺序错误导致的白屏，恢复页面正常访问。",
@@ -40,7 +54,7 @@ export const changelog = [
   },
   {
     version: "v1.3.2",
-    date: "2026-08-10 20:10",
+    date: "2026-08-10",
     type: "新增",
     title: "品牌名调整与计划完成度统计",
     summary: "页面展示品牌从 Chenji 调整为「沉积」，新增基于真实计划状态的完成度统计。",
@@ -53,7 +67,7 @@ export const changelog = [
   },
   {
     version: "v1.3.1",
-    date: "2026-08-10 18:05",
+    date: "2026-08-10",
     type: "修复",
     title: "计划系统细节修复",
     summary: "清理没有真实数据来源的分类筛选，修复计划页的细节问题。",
@@ -66,7 +80,7 @@ export const changelog = [
   },
   {
     version: "v1.3.0",
-    date: "2026-08-10 16:20",
+    date: "2026-08-10",
     type: "优化",
     title: "计划页真实化改造",
     summary: "删除假模块，计划页改为基于真实后端数据的三视图。",
@@ -79,7 +93,7 @@ export const changelog = [
   },
   {
     version: "v1.2.0",
-    date: "2026-08-10 13:40",
+    date: "2026-08-10",
     type: "优化",
     title: "工具箱重构为学习与维护工具箱",
     summary: "工具箱从技术文档堆叠改为分类清晰的中文说明入口。",
@@ -91,7 +105,7 @@ export const changelog = [
   },
   {
     version: "v1.1.0",
-    date: "2026-08-10 09:15",
+    date: "2026-08-10",
     type: "优化",
     title: "工作台 UI 升级",
     summary: "全站升级为深色侧边栏工作台风格，新增多个页面与管理后台面板。",
@@ -104,7 +118,7 @@ export const changelog = [
   },
   {
     version: "v1.0.0",
-    date: "2026-08-09 20:30",
+    date: "2026-08-09",
     type: "部署",
     title: "全栈学习工作台上线",
     summary: "React + FastAPI 全栈学习工作台首次部署上线。",

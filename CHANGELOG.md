@@ -4,6 +4,19 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.4.1] — 2026-08-10 · 工具箱新增 ChatGPT 和 B站入口
+
+### 新增
+- 工具箱新增「AI 与常用网站」分组，放置平时最常打开的网站入口
+- 新增 **ChatGPT** 入口（chatgpt.com）：AI 对话、查资料、整理思路、辅助学习和写代码
+- 新增 **哔哩哔哩 / B站** 入口（bilibili.com）：查找学习视频、公开课、技术教程和英语学习视频
+- 外链均在新标签页打开（`target="_blank"` + `rel="noopener noreferrer"`）
+- 工具箱原有项目入口 / 内容维护 / 常用命令 / 故障排查 / 学习资料保持不变
+
+### 未改动
+- 后端接口路径、数据库结构、GitHub OAuth 逻辑零改动
+- Docker / Nginx / GitHub Actions 部署体系未动
+
 ## [1.4.0] — 2026-08-10 · 新增更新日志页面
 
 ### 变更

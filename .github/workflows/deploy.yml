@@ -20,7 +20,6 @@ jobs:
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/chenji-learning-hub' }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
 
@@ -37,19 +36,19 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/chenji_deploy_key
           chmod 600 ~/.ssh/chenji_deploy_key
-          ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -p 22 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Check SSH connection
         run: |
-          nc -vz -w 10 "$DEPLOY_HOST" "$DEPLOY_PORT"
+          nc -vz -w 10 "$DEPLOY_HOST" 22
           ssh -vvv -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=20 \
-            -i ~/.ssh/chenji_deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            -i ~/.ssh/chenji_deploy_key -p 22 "$DEPLOY_USER@$DEPLOY_HOST" \
             "echo ssh-ok"
 
       - name: Deploy on server
         run: |
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=20 \
-            -i ~/.ssh/chenji_deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            -i ~/.ssh/chenji_deploy_key -p 22 "$DEPLOY_USER@$DEPLOY_HOST" \
             "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$DEPLOY_PATH"

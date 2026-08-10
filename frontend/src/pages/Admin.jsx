@@ -25,6 +25,20 @@ const EMPTY_PLAN = {
 // 计划月历用的小工具（与 Plans.jsx 保持一致的配色约定）
 const STATUS_CLASS = { 未开始: "todo", 进行中: "pending", 已完成: "done", 暂停: "paused" };
 const STATUS_ORDER = ["未开始", "进行中", "已完成", "暂停"];
+// 后端状态值可能是中文也可能是英文，统一映射成中文显示（todo/doing/done/paused 兼容）
+const STATUS_LABEL = {
+  未开始: "未开始",
+  进行中: "进行中",
+  已完成: "已完成",
+  暂停: "暂停",
+  todo: "未开始",
+  doing: "进行中",
+  done: "已完成",
+  paused: "暂停",
+};
+// 状态兼容映射：显示用中文标签，样式用固定 class
+const toStatusLabel = (s) => STATUS_LABEL[s] || s || "未开始";
+const toStatusClass = (s) => STATUS_CLASS[toStatusLabel(s)] || "pending";
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -121,6 +135,12 @@ export default function Admin({ user }) {
     setEditingArticle(null);
     setEditingPlan(null);
     setArticleForm(EMPTY_ARTICLE);
+    setPlanForm(EMPTY_PLAN);
+  };
+
+  // 仅清空计划表单（不碰文章表单）
+  const clearPlanForm = () => {
+    setEditingPlan(null);
     setPlanForm(EMPTY_PLAN);
   };
 
@@ -233,7 +253,7 @@ export default function Admin({ user }) {
       afternoon: p.afternoon,
       evening: p.evening,
       review: p.review,
-      status: p.status,
+      status: toStatusLabel(p.status),
     });
     setTab("plans");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -581,8 +601,8 @@ export default function Admin({ user }) {
                   <>
                     <p>
                       <b>{selectedDate}</b> · {dayPlan.title}
-                      <span className={`status ${STATUS_CLASS[dayPlan.status] || "pending"}`}>
-                        {dayPlan.status}
+                      <span className={`status ${toStatusClass(dayPlan.status)}`}>
+                        {toStatusLabel(dayPlan.status)}
                       </span>
                     </p>
                     <div className="form-actions">
@@ -695,6 +715,9 @@ export default function Admin({ user }) {
                     <button type="submit" className="btn btn-primary">
                       {editingPlan ? "保存修改" : "创建计划"}
                     </button>
+                    <button type="button" className="btn" onClick={clearPlanForm}>
+                      清空表单
+                    </button>
                     {(editingArticle || editingPlan) && (
                       <button type="button" className="btn" onClick={cancelEdit}>
                         取消编辑
@@ -707,7 +730,7 @@ export default function Admin({ user }) {
               <div>
                 <h3>计划列表（{plans.length}）</h3>
                 {plans.length === 0 ? (
-                  <p className="muted">还没有计划，用上面的表单创建第一条。</p>
+                  <p className="muted">暂无计划，创建第一条计划。</p>
                 ) : (
                   <ul className="admin-list">
                     {plans.map((p) => (
@@ -715,10 +738,10 @@ export default function Admin({ user }) {
                         <span>
                           {p.date} · {p.title}
                           <span
-                            className={`status ${STATUS_CLASS[p.status] || "pending"}`}
+                            className={`status ${toStatusClass(p.status)}`}
                             style={{ marginLeft: 8 }}
                           >
-                            {p.status}
+                            {toStatusLabel(p.status)}
                           </span>
                         </span>
                         <span className="admin-actions">

@@ -4,7 +4,64 @@ import { api } from "../api.js";
 // 计划状态 → CSS 类（与 Admin 后台一致）：未开始灰 / 进行中蓝 / 已完成绿 / 暂停橙
 const STATUS_ORDER = ["未开始", "进行中", "已完成", "暂停"];
 const STATUS_CLASS = { 未开始: "todo", 进行中: "pending", 已完成: "done", 暂停: "paused" };
+// 后端状态值可能是中文也可能是英文，统一映射成中文显示（todo/doing/done/paused 兼容）
+const STATUS_LABEL = {
+  未开始: "未开始",
+  进行中: "进行中",
+  已完成: "已完成",
+  暂停: "暂停",
+  todo: "未开始",
+  doing: "进行中",
+  done: "已完成",
+  paused: "暂停",
+};
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+
+// 状态兼容映射：显示用中文标签，样式用固定 class
+const toStatusLabel = (s) => STATUS_LABEL[s] || s || "未开始";
+const toStatusClass = (s) => STATUS_CLASS[toStatusLabel(s)] || "pending";
+
+// 空字段统一显示「未填写」，避免布局塌陷
+const slot = (v) => (v && v.trim() ? v : <span className="field-empty">未填写</span>);
+
+// 计划详情统一展示（日期 / 标题 / 今日目标 / 上午 / 下午 / 晚上 / 今日复盘 / 状态）
+function PlanDetail({ plan, showDate = true }) {
+  return (
+    <>
+      <div className="plan-card-head">
+        {showDate && <span className="plan-date">{plan.date}</span>}
+        <span className={`status ${toStatusClass(plan.status)}`}>
+          {toStatusLabel(plan.status)}
+        </span>
+      </div>
+      <h3 className="plan-title">
+        {plan.title ? plan.title : <span className="field-empty">未填写</span>}
+      </h3>
+      <p className="plan-goal">
+        <b>今日目标：</b>
+        {slot(plan.goal)}
+      </p>
+      <ul className="plan-slots">
+        <li>
+          <b>上午：</b>
+          {slot(plan.morning)}
+        </li>
+        <li>
+          <b>下午：</b>
+          {slot(plan.afternoon)}
+        </li>
+        <li>
+          <b>晚上：</b>
+          {slot(plan.evening)}
+        </li>
+      </ul>
+      <p className="plan-review">
+        <b>今日复盘：</b>
+        {slot(plan.review)}
+      </p>
+    </>
+  );
+}
 
 const EMPTY_FORM = {
   date: "",
@@ -25,46 +82,8 @@ const todayStr = () => {
 };
 const nowMonth = () => todayStr().slice(0, 7);
 
-// 前端自动归类（不改数据库，仅用于列表筛选统计；匹配不到归为「其他」）
-const CATEGORY_RULES = [
-  {
-    key: "学习",
-    keywords: [
-      "学习", "课程", "笔记", "读书", "阅读", "背", "英语", "数学", "编程",
-      "代码", "前端", "后端", "python", "react", "练习", "复习", "备考",
-      "网课", "考试", "算法", "教程",
-    ],
-  },
-  {
-    key: "运动",
-    keywords: [
-      "运动", "跑步", "健身", "锻炼", "散步", "篮球", "羽毛球", "游泳",
-      "跳绳", "拉伸", "瑜伽", "俯卧撑", "深蹲", "力量",
-    ],
-  },
-  {
-    key: "生活",
-    keywords: [
-      "生活", "家务", "做饭", "早睡", "作息", "买菜", "整理", "打扫",
-      "洗衣", "睡觉", "吃饭", "洗漱", "休息", "习惯",
-    ],
-  },
-  {
-    key: "项目",
-    keywords: [
-      "项目", "开发", "部署", "站点", "网站", "重构", "bug", "上线",
-      "github", "git", "提交", "docker", "服务器", "发布", "测试", "打包",
-    ],
-  },
-  { key: "复盘", keywords: ["复盘", "总结", "回顾", "反思", "心得", "收获", "改进"] },
-];
-
-function planCategories(p) {
-  const text = `${p.title || ""} ${p.goal || ""}`.toLowerCase();
-  return CATEGORY_RULES.filter((r) =>
-    r.keywords.some((k) => text.includes(k.toLowerCase()))
-  ).map((r) => r.key);
-}
+// 说明：计划模型没有 category 字段，不做「假分类统计」——分类筛选已移除，
+// 只保留真实的状态筛选与关键词搜索（数据全部来自后端数据库）。
 
 // hash 子路径：#/plans 月视图（默认） · #/plans/list 列表 · #/plans/today 今日
 // 深链：#/plans/day/YYYY-MM-DD · #/plans/month/YYYY-MM（兼容旧的 #/plans/YYYY-MM 与 #/plans/YYYY-MM-DD）
@@ -101,7 +120,6 @@ export default function Plans({ user, hashPath }) {
   const [message, setMessage] = useState(null);
   // 列表视图筛选
   const [statusFilter, setStatusFilter] = useState("全部");
-  const [categoryFilter, setCategoryFilter] = useState("全部");
   const [keyword, setKeyword] = useState("");
   const isAdmin = !!user && user.is_admin;
 
@@ -149,7 +167,7 @@ export default function Plans({ user, hashPath }) {
             afternoon: plan.afternoon,
             evening: plan.evening,
             review: plan.review,
-            status: plan.status,
+            status: toStatusLabel(plan.status),
           }
         : { ...EMPTY_FORM, date: fallbackDate || todayStr() }
     );
@@ -355,8 +373,15 @@ export default function Plans({ user, hashPath }) {
             <button type="button" className="btn" onClick={() => setMonthKey(prevMonth)}>
               ◀ 上月
             </button>
-            <button type="button" className="btn" onClick={() => setMonthKey(nowMonth())}>
-              本月
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setMonthKey(nowMonth());
+                setSelectedDate(todayStr());
+              }}
+            >
+              回到今天
             </button>
             <button type="button" className="btn" onClick={() => setMonthKey(nextMonth)}>
               下月 ▶
@@ -386,8 +411,8 @@ export default function Plans({ user, hashPath }) {
                 {c.plan && (
                   <>
                     <span className="cal-title">{c.plan.title}</span>
-                    <span className={`status ${STATUS_CLASS[c.plan.status] || "pending"}`}>
-                      {c.plan.status}
+                    <span className={`status ${toStatusClass(c.plan.status)}`}>
+                      {toStatusLabel(c.plan.status)}
                     </span>
                   </>
                 )}
@@ -398,35 +423,7 @@ export default function Plans({ user, hashPath }) {
 
         {dayPlan ? (
           <div className="plan-card day-plan">
-            <div className="plan-card-head">
-              <span className="plan-date">{selectedDate}</span>
-              <span className={`status ${STATUS_CLASS[dayPlan.status] || "pending"}`}>
-                {dayPlan.status}
-              </span>
-            </div>
-            <h2 className="plan-title">{dayPlan.title}</h2>
-            {dayPlan.goal && <p className="plan-goal">目标：{dayPlan.goal}</p>}
-            <ul className="plan-slots">
-              {dayPlan.morning && (
-                <li>
-                  <b>上午：</b>
-                  {dayPlan.morning}
-                </li>
-              )}
-              {dayPlan.afternoon && (
-                <li>
-                  <b>下午：</b>
-                  {dayPlan.afternoon}
-                </li>
-              )}
-              {dayPlan.evening && (
-                <li>
-                  <b>晚上：</b>
-                  {dayPlan.evening}
-                </li>
-              )}
-            </ul>
-            {dayPlan.review && <p className="plan-review">复盘：{dayPlan.review}</p>}
+            <PlanDetail plan={dayPlan} />
             {isAdmin && (
               <div className="form-actions">
                 <button type="button" className="btn" onClick={() => startEdit(dayPlan)}>
@@ -444,7 +441,10 @@ export default function Plans({ user, hashPath }) {
           </div>
         ) : (
           <div className="day-panel-empty">
-            <p className="muted">{selectedDate} 这一天还没有计划。</p>
+            <p className="muted">
+              {selectedDate}{" "}
+              {isAdmin ? "这一天暂无计划，可以创建。" : "这一天暂无公开计划。"}
+            </p>
             {isAdmin && (
               <button
                 type="button"
@@ -463,24 +463,13 @@ export default function Plans({ user, hashPath }) {
   // ---------- 列表视图 ----------
   const renderList = () => {
     const statusCounts = { 全部: plans.length };
-    for (const s of STATUS_ORDER) statusCounts[s] = plans.filter((p) => p.status === s).length;
-    const catCounts = { 全部: plans.length, 其他: 0 };
-    for (const r of CATEGORY_RULES) catCounts[r.key] = 0;
-    for (const p of plans) {
-      const cats = planCategories(p);
-      for (const c of cats) catCounts[c] = (catCounts[c] || 0) + 1;
-      if (cats.length === 0) catCounts["其他"] += 1;
+    for (const s of STATUS_ORDER) {
+      statusCounts[s] = plans.filter((p) => toStatusLabel(p.status) === s).length;
     }
 
     const kw = keyword.trim().toLowerCase();
     const filtered = plans.filter((p) => {
-      if (statusFilter !== "全部" && p.status !== statusFilter) return false;
-      if (categoryFilter !== "全部") {
-        const cats = planCategories(p);
-        const hit =
-          categoryFilter === "其他" ? cats.length === 0 : cats.includes(categoryFilter);
-        if (!hit) return false;
-      }
+      if (statusFilter !== "全部" && toStatusLabel(p.status) !== statusFilter) return false;
       if (kw) {
         const hay = `${p.title || ""} ${p.goal || ""} ${p.review || ""}`.toLowerCase();
         if (!hay.includes(kw)) return false;
@@ -512,23 +501,6 @@ export default function Plans({ user, hashPath }) {
             </div>
           </div>
 
-          <div className="filter-group">
-            <span className="filter-label">分类</span>
-            <div className="filter-bar">
-              {["全部", ...CATEGORY_RULES.map((r) => r.key), "其他"].map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`filter-chip${categoryFilter === c ? " active" : ""}`}
-                  onClick={() => setCategoryFilter(c)}
-                >
-                  {c}（{catCounts[c] || 0}）
-                </button>
-              ))}
-            </div>
-            <p className="filter-hint">分类根据标题 / 目标自动归类，仅供筛选，不写入数据库。</p>
-          </div>
-
           <div className="filter-search">
             <span className="filter-label">搜索</span>
             <div className="search-box">
@@ -542,44 +514,21 @@ export default function Plans({ user, hashPath }) {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {plans.length === 0 ? (
+          <div className="empty-state">
+            <h2>暂无公开计划</h2>
+            <p>管理员登录后可以创建第一条计划。</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="empty-state">
             <h2>没有符合条件的计划</h2>
-            <p>换个筛选条件试试，或者等管理员发布新的计划。</p>
+            <p>换个筛选条件或关键词试试。</p>
           </div>
         ) : (
           <div className="plan-list">
             {filtered.map((p) => (
               <article key={p.id} className="plan-card">
-                <div className="plan-card-head">
-                  <span className="plan-date">{p.date}</span>
-                  <span className={`status ${STATUS_CLASS[p.status] || "pending"}`}>
-                    {p.status}
-                  </span>
-                </div>
-                <h3 className="plan-title">{p.title}</h3>
-                {p.goal && <p className="plan-goal">目标：{p.goal}</p>}
-                <ul className="plan-slots">
-                  {p.morning && (
-                    <li>
-                      <b>上午：</b>
-                      {p.morning}
-                    </li>
-                  )}
-                  {p.afternoon && (
-                    <li>
-                      <b>下午：</b>
-                      {p.afternoon}
-                    </li>
-                  )}
-                  {p.evening && (
-                    <li>
-                      <b>晚上：</b>
-                      {p.evening}
-                    </li>
-                  )}
-                </ul>
-                {p.review && <p className="plan-review">复盘：{p.review}</p>}
+                <PlanDetail plan={p} />
                 {isAdmin && (
                   <div className="form-actions">
                     <button type="button" className="btn btn-sm" onClick={() => startEdit(p)}>
@@ -614,7 +563,7 @@ export default function Plans({ user, hashPath }) {
         </div>
         {!plan ? (
           <div className="empty-state">
-            <h2>今天还没有公开计划</h2>
+            <h2>今天还没有公开计划。</h2>
             <p>访客只能查看；管理员登录后可以为今天创建计划。</p>
             {isAdmin && (
               <div className="form-actions" style={{ justifyContent: "center" }}>
@@ -626,34 +575,7 @@ export default function Plans({ user, hashPath }) {
           </div>
         ) : (
           <div className="plan-card day-plan">
-            <div className="plan-card-head">
-              <span className={`status ${STATUS_CLASS[plan.status] || "pending"}`}>
-                {plan.status}
-              </span>
-            </div>
-            <h2 className="plan-title">{plan.title}</h2>
-            {plan.goal && <p className="plan-goal">目标：{plan.goal}</p>}
-            <ul className="plan-slots">
-              {plan.morning && (
-                <li>
-                  <b>上午：</b>
-                  {plan.morning}
-                </li>
-              )}
-              {plan.afternoon && (
-                <li>
-                  <b>下午：</b>
-                  {plan.afternoon}
-                </li>
-              )}
-              {plan.evening && (
-                <li>
-                  <b>晚上：</b>
-                  {plan.evening}
-                </li>
-              )}
-            </ul>
-            {plan.review && <p className="plan-review">复盘：{plan.review}</p>}
+            <PlanDetail plan={plan} showDate={false} />
             {isAdmin && (
               <div className="form-actions">
                 <button type="button" className="btn" onClick={() => startEdit(plan)}>
@@ -688,7 +610,7 @@ export default function Plans({ user, hashPath }) {
         </div>
         {!plan ? (
           <div className="empty-state">
-            <h2>这一天没有计划</h2>
+            <h2>这一天暂无公开计划。</h2>
             <p>
               {isAdmin
                 ? "管理员可以点击下面的按钮，为这一天创建一条计划。"
@@ -704,35 +626,7 @@ export default function Plans({ user, hashPath }) {
           </div>
         ) : (
           <div className="plan-card day-plan">
-            <div className="plan-card-head">
-              <span className="plan-date">{date}</span>
-              <span className={`status ${STATUS_CLASS[plan.status] || "pending"}`}>
-                {plan.status}
-              </span>
-            </div>
-            <h2 className="plan-title">{plan.title}</h2>
-            {plan.goal && <p className="plan-goal">目标：{plan.goal}</p>}
-            <ul className="plan-slots">
-              {plan.morning && (
-                <li>
-                  <b>上午：</b>
-                  {plan.morning}
-                </li>
-              )}
-              {plan.afternoon && (
-                <li>
-                  <b>下午：</b>
-                  {plan.afternoon}
-                </li>
-              )}
-              {plan.evening && (
-                <li>
-                  <b>晚上：</b>
-                  {plan.evening}
-                </li>
-              )}
-            </ul>
-            {plan.review && <p className="plan-review">复盘：{plan.review}</p>}
+            <PlanDetail plan={plan} />
             {isAdmin && (
               <div className="form-actions">
                 <button type="button" className="btn" onClick={() => startEdit(plan)}>

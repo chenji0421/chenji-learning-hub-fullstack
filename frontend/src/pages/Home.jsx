@@ -1,37 +1,52 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { changelog } from "../data/changelog.js";
+import { SITE_INFO } from "../data/site.js";
 
-// 首页的技术笔记计数与 Notes 页保持同一分类约定
-const NOTE_CATEGORIES = ["技术笔记", "笔记"];
+// 上线时长：以站点上线日期（SITE_INFO.launchedAt）为起点，实时计算 X 天 Y 小时 Z 分 W 秒。
+// 起点无效时返回 null（页面显示「上线时间待确认」）；Math.max(0, …) 防止出现负数。
+function computeUptime(launchedAt, now) {
+  const start = new Date(launchedAt);
+  if (Number.isNaN(start.getTime())) return null;
+  const totalSec = Math.floor(Math.max(0, now.getTime() - start.getTime()) / 1000);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${d} 天 ${h} 小时 ${m} 分 ${s} 秒`;
+}
 
 export default function Home({ user }) {
   const [articles, setArticles] = useState(null);
   const [plans, setPlans] = useState(null);
   const [health, setHealth] = useState(null);
+  const [notes, setNotes] = useState(null);
+  const [loaded, setLoaded] = useState(false);
   // 时钟卡片：每秒刷新
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    Promise.all([api.listArticles(), api.listPlans(), api.health().catch(() => null)])
-      .then(([a, p, h]) => {
-        setArticles(a);
-        setPlans(p);
+    // 每个接口单独容错：失败返回 null，只影响对应卡片，不影响页面渲染
+    Promise.all([
+      api.listArticles().catch(() => null),
+      api.listPlans().catch(() => null),
+      api.health().catch(() => null),
+      api.listNoteItems().catch(() => null),
+    ])
+      .then(([a, p, h, n]) => {
+        setArticles(Array.isArray(a) ? a : null);
+        setPlans(Array.isArray(p) ? p : null);
         setHealth(h);
+        setNotes(Array.isArray(n) ? n : null);
       })
-      .catch(() => {
-        // 后端不可用时置空，页面仍能渲染空状态而不是崩掉
-        setArticles([]);
-        setPlans([]);
-        setHealth(null);
-      });
+      .finally(() => setLoaded(true));
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const loading = articles === null || plans === null;
+  // loading：请求尚未结束；请求结束后，失败的那一项保持 null
+  const loading = !loaded;
   const published = (articles || []).filter((a) => a.status === "published");
-  const notes = published.filter((a) => NOTE_CATEGORIES.includes(a.category));
   const recentArticles = published.slice(0, 3);
 
   const timeStr = now.toLocaleTimeString("zh-CN", { hour12: false });
@@ -41,6 +56,8 @@ export default function Home({ user }) {
     day: "numeric",
     weekday: "long",
   });
+  const uptime = computeUptime(SITE_INFO.launchedAt, now);
+  const latestVersion = changelog[0] || null;
 
   return (
     <div className="home">
@@ -104,78 +121,91 @@ export default function Home({ user }) {
         </div>
       </section>
 
-      {/* 时钟卡片 + 站点状态卡 */}
-      <div className="home-status-grid">
-        <div className="clock-card">
-          <div className="clock-time">{timeStr}</div>
-          <div className="clock-date">{dateStr}</div>
-          <div className="clock-tz">Asia/Shanghai · GMT+8</div>
-        </div>
-
-        <div className="site-status-card">
-          <h2>📡 站点状态</h2>
-          <ul className="site-status-list">
-            <li>
-              <span className="status-label">上线时间</span>
-              <span>2026-08</span>
-            </li>
-            <li>
-              <span className="status-label">公开文章</span>
-              <span>{loading ? "…" : published.length}</span>
-            </li>
-            <li>
-              <span className="status-label">公开计划</span>
-              <span>{loading ? "…" : (plans || []).length}</span>
-            </li>
-            <li>
-              <span className="status-label">登录状态</span>
-              <span className={user ? "status-ok" : "status-muted"}>
-                {user ? `已登录 · ${user.username}` : "未登录"}
-              </span>
-            </li>
-            <li>
-              <span className="status-label">后端服务</span>
-              <span className={health?.status === "ok" ? "status-ok" : "status-muted"}>
-                {health?.status === "ok" ? "运行正常" : "暂不可用"}
-              </span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      {/* 统计卡：全部来自真实数据，数量为 0 时显示空状态 */}
-      <div className="stat-cards">
-        <div className="stat-card">
-          <div className="stat-num">{loading ? "…" : published.length}</div>
-          <div className="stat-label">已发布文章</div>
-          {!loading && published.length === 0 && (
-            <p className="stat-hint">等待第一篇</p>
-          )}
-        </div>
-        <div className="stat-card">
-          <div className="stat-num">{loading ? "…" : (plans || []).length}</div>
-          <div className="stat-label">公开计划</div>
-          {!loading && (plans || []).length === 0 && (
-            <p className="stat-hint">还没有计划</p>
-          )}
-        </div>
-        <div className="stat-card">
-          <div className="stat-num">{loading ? "…" : notes.length}</div>
-          <div className="stat-label">技术笔记</div>
-          {!loading && notes.length === 0 && (
-            <p className="stat-hint">暂无笔记</p>
-          )}
-        </div>
-        <div className="stat-card">
-          <div className="stat-num">
-            {health?.status === "ok" ? "✅" : "⚠️"}
+      {/* 此刻 / 站点状态面板：全部来自真实 API 或真实配置，不伪造数字 */}
+      <section className="now-panel">
+        <div className="now-panel-head">
+          <span className="now-panel-icon">🕒</span>
+          <div className="now-panel-title">
+            <h2>此刻</h2>
+            <p>{SITE_INFO.siteName} 正在运行中</p>
           </div>
-          <div className="stat-label">后端服务</div>
-          <p className="stat-hint">
-            {health?.status === "ok" ? "运行正常" : "暂不可用"}
-          </p>
         </div>
-      </div>
+
+        <div className="now-clock">
+          <div className="now-time">{timeStr}</div>
+          <div className="now-pills">
+            <span className="now-pill">📅 {dateStr}</span>
+            <span className="now-pill">🌏 {SITE_INFO.timezone}</span>
+          </div>
+        </div>
+
+        <div className="now-grid">
+          <div className="now-card">
+            <span className="now-card-icon">🚀</span>
+            <div className="now-card-value">{uptime || "上线时间待确认"}</div>
+            <div className="now-card-label">上线时间</div>
+            <div className="now-card-note">从站点上线日期开始计算</div>
+          </div>
+
+          <div className="now-card">
+            <span className="now-card-icon">📄</span>
+            <div className="now-card-value">
+              {loading ? "…" : (articles === null ? "暂时无法获取" : `${published.length} 篇`)}
+            </div>
+            <div className="now-card-label">公开文章</div>
+            <div className="now-card-note">来自文章接口</div>
+          </div>
+
+          <div className="now-card">
+            <span className="now-card-icon">📅</span>
+            <div className="now-card-value">
+              {loading ? "…" : (plans === null ? "暂时无法获取" : `${(plans || []).length} 条`)}
+            </div>
+            <div className="now-card-label">公开计划</div>
+            <div className="now-card-note">来自计划接口</div>
+          </div>
+
+          <div className="now-card">
+            <span className="now-card-icon">📚</span>
+            <div className="now-card-value">
+              {loading ? "…" : (notes === null ? "暂未接入统计" : `${notes.length} 份`)}
+            </div>
+            <div className="now-card-label">学习笔记</div>
+            <div className="now-card-note">来自笔记接口</div>
+          </div>
+
+          <div className="now-card">
+            <span className="now-card-icon">🏷️</span>
+            <div className="now-card-value">
+              {latestVersion ? latestVersion.version : "暂无版本记录"}
+            </div>
+            <div className="now-card-label">当前版本</div>
+            <div className="now-card-note">
+              {latestVersion ? latestVersion.title : "暂无更新记录"}
+            </div>
+          </div>
+
+          <div className="now-card">
+            <span className="now-card-icon">📡</span>
+            <div className="now-card-value">
+              {health?.status === "ok" ? "运行正常" : "暂不可用"}
+            </div>
+            <div className="now-card-label">后端服务</div>
+            <div className="now-card-note">
+              {health?.status === "ok" ? "健康检查通过" : "检查 /api/health"}
+            </div>
+          </div>
+
+          <div className="now-card">
+            <span className="now-card-icon">🔑</span>
+            <div className="now-card-value">{user ? user.username : "未登录"}</div>
+            <div className="now-card-label">登录状态</div>
+            <div className="now-card-note">
+              {user ? (user.is_admin ? "管理员" : "访客") : "登录后可管理"}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 当前正在发生什么：全部真实接入状态 */}
       <section className="home-module">
@@ -218,6 +248,8 @@ export default function Home({ user }) {
         <h2>📝 最近文章</h2>
         {loading ? (
           <p className="empty-inline">加载中…</p>
+        ) : articles === null ? (
+          <p className="empty-inline">暂时无法获取文章列表，稍后再来看看吧。</p>
         ) : published.length === 0 ? (
           <p className="empty-inline">
             还没有文章。管理员登录后，在「管理」里写下第一篇吧。

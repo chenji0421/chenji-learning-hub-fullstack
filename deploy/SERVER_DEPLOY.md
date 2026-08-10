@@ -1,6 +1,6 @@
 # chenji.felixfu.xyz server deployment
 
-This folder contains the Docker Compose setup for deploying Chenji Learning Hub on Felix Fu's server.
+This folder contains the Docker Compose setup for deploying Chenji Learning Hub on the server.
 
 ## DNS
 

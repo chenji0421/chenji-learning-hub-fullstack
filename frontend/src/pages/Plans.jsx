@@ -82,13 +82,47 @@ const todayStr = () => {
 };
 const nowMonth = () => todayStr().slice(0, 7);
 
-// 阶段冲刺计划标签页：概览（公开计划三视图）+ 每日安排（按日期看）+ 完成度（真实 status 统计）+ 暂未接入
+// 阶段冲刺计划标签页：概览（公开计划三视图）+ 每日安排（按日期看）+ 完成度（真实 status 统计）+ 生活记录 + 暂未接入
 // ⚠️ 只依赖后端已有的 /api/plans 数据；不调用 sprint 时间块 / 完成记录 / 睡眠记录接口
 const SPRINT_TABS = [
   { key: "overview", label: "概览", sub: "月 / 列表 / 今日" },
   { key: "daily", label: "每日安排", sub: "按日期查看" },
   { key: "completion", label: "完成度", sub: "真实状态统计" },
-  { key: "more", label: "暂未接入", sub: "课程 / 应用 / 记账 / 饮食 / 身体 / 睡眠" },
+  { key: "life", label: "生活记录", sub: "体重 / 运动 / 睡眠 / 饮食" },
+  { key: "more", label: "暂未接入", sub: "课程 / 应用 / 记账" },
+];
+
+// 生活记录入口（体重 / 运动 / 睡眠 / 饮食）：
+// 目前只是计划系统的后续入口占位，暂未接入真实后端，不生成假数据、不放假表格、不放假保存按钮
+const LIFE_MODULES = [
+  {
+    key: "weight",
+    icon: "⚖️",
+    title: "体重记录",
+    desc: "后续用于记录每天或每周的体重变化，帮助观察身体状态。",
+    note: "后续会支持管理员添加体重记录。",
+  },
+  {
+    key: "exercise",
+    icon: "🏃",
+    title: "运动记录",
+    desc: "后续用于记录长跑、力量训练、拉伸等运动情况。",
+    note: "后续会支持管理员添加运动记录。",
+  },
+  {
+    key: "sleep",
+    icon: "🌙",
+    title: "睡眠记录",
+    desc: "后续用于记录入睡时间、起床时间、睡眠时长和睡眠质量。",
+    note: "后续会支持管理员添加睡眠记录。",
+  },
+  {
+    key: "diet",
+    icon: "🍱",
+    title: "饮食记录",
+    desc: "后续用于记录早餐、午餐、晚餐和加餐情况，帮助观察饮食规律。",
+    note: "后续会支持管理员添加饮食记录。",
+  },
 ];
 
 // 暂未接入的模块占位（不生成假数据、不放假表格、不放假记录）
@@ -96,9 +130,6 @@ const MORE_MODULES = [
   { key: "courses", icon: "📖", title: "课程" },
   { key: "apps", icon: "📱", title: "应用" },
   { key: "expenses", icon: "💰", title: "记账" },
-  { key: "diet", icon: "🍱", title: "饮食" },
-  { key: "body", icon: "⚖️", title: "身体" },
-  { key: "sleep", icon: "😴", title: "睡眠" },
 ];
 
 // 说明：计划模型没有 category 字段，不做「假分类统计」——分类筛选已移除，
@@ -848,6 +879,41 @@ export default function Plans({ user, hashPath }) {
     );
   };
 
+  // ---------- 生活记录 tab：体重 / 运动 / 睡眠 / 饮食 四张暂未接入入口卡 ----------
+  const renderLife = () => {
+    return (
+      <section className="sprint-section">
+        <div className="sprint-section-head">
+          <div>
+            <h2>🏃 生活记录</h2>
+            <p className="muted">体重、运动、睡眠、饮食</p>
+          </div>
+        </div>
+        <p className="muted" style={{ marginBottom: "var(--sp-4)" }}>
+          这些模块目前还没有接入真实后端数据，暂时只作为计划系统的后续入口。后续会支持管理员新增、编辑和保存记录，不会显示假数据。
+        </p>
+        <div className="life-grid">
+          {LIFE_MODULES.map((m) => (
+            <div key={m.key} className="life-card">
+              <span className="life-status">暂未接入</span>
+              <h3>
+                {m.icon} {m.title}
+              </h3>
+              <p>{m.desc}</p>
+              <p className="life-card-note">{m.note}</p>
+            </div>
+          ))}
+        </div>
+        <div className="life-next-card">
+          <h3>📌 后续计划</h3>
+          <p>
+            体重、运动、睡眠和饮食会在后续逐步接入真实后端保存。每次只接入一个模块，避免一次性修改过多导致线上不稳定。
+          </p>
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div className="plans">
       {header}
@@ -873,12 +939,14 @@ export default function Plans({ user, hashPath }) {
 
       {sprintTab === "completion" && renderStats()}
 
+      {sprintTab === "life" && renderLife()}
+
       {sprintTab === "more" && (
         <section className="sprint-section">
           <div className="sprint-section-head">
             <div>
               <h2>🧩 暂未接入</h2>
-              <p className="muted">课程 / 应用 / 记账 / 饮食 / 身体 / 睡眠</p>
+              <p className="muted">课程 / 应用 / 记账</p>
             </div>
           </div>
           <p className="muted" style={{ marginBottom: "var(--sp-4)" }}>

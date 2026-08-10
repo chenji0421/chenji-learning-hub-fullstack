@@ -4813,6 +4813,79 @@ details.tool-card[open] {
   line-height: 1.7;
 }
 
+/* ---------- 生活记录 tab：体重 / 运动 / 睡眠 / 饮食 四张暂未接入入口卡 ---------- */
+.life-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.life-card {
+  padding: var(--sp-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.life-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.life-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg-subtle);
+  border: 1px dashed var(--border-strong);
+  margin-bottom: var(--sp-3);
+}
+
+.life-card h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.life-card p {
+  margin: 0 0 var(--sp-3);
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.life-card .life-card-note {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+/* 后续计划说明卡 */
+.life-next-card {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.life-next-card h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.life-next-card p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
 /* ---------- 每日安排 tab：日期选择器 ---------- */
 .daily-picker {
   display: flex;

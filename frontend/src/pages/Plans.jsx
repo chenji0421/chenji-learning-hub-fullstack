@@ -40,7 +40,7 @@ export default function Plans({ user, hashPath }) {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(null);
   const isAdmin = !!user && user.is_admin;
 
   const refresh = () => {
@@ -50,9 +50,10 @@ export default function Plans({ user, hashPath }) {
     refresh();
   }, []);
 
-  const showMsg = (msg) => {
-    setMessage(msg);
-    setTimeout(() => setMessage(""), 2500);
+  const showMsg = (msg, type = "success") => {
+    setMessage({ text: msg, type });
+    // 错误提示多停留一会，方便用户看清失败原因
+    setTimeout(() => setMessage(null), type === "error" ? 5000 : 2500);
   };
 
   // 按日期索引，日计划详情直接命中
@@ -95,7 +96,7 @@ export default function Plans({ user, hashPath }) {
       setEditing(false);
       refresh();
     } catch (err) {
-      showMsg(err.message);
+      showMsg(err.message, "error");
     }
   };
 
@@ -106,7 +107,7 @@ export default function Plans({ user, hashPath }) {
       showMsg("计划已删除");
       refresh();
     } catch (err) {
-      showMsg(err.message);
+      showMsg(err.message, "error");
     }
   };
 
@@ -218,7 +219,9 @@ export default function Plans({ user, hashPath }) {
     return (
       <div className="plans">
         <h1>{date} 的计划</h1>
-        {message && <div className="toast">{message}</div>}
+        {message && (
+          <div className={`toast toast-${message.type}`}>{message.text}</div>
+        )}
         <form className="admin-form plan-edit-form" onSubmit={savePlan}>
           <div className="form-row">
             <label>

@@ -25,6 +25,13 @@ export default function ArticleDetail({ id }) {
       <h1>{article.title}</h1>
       <div className="article-meta">
         {article.category && <span className="tag">{article.category}</span>}
+        {article.tags &&
+          article.tags.length > 0 &&
+          article.tags.map((t, i) => (
+            <span key={i} className="tag">
+              #{t}
+            </span>
+          ))}
         <span>更新于 {new Date(article.updated_at).toLocaleDateString("zh-CN")}</span>
       </div>
       {article.summary && <p className="article-lead">{article.summary}</p>}

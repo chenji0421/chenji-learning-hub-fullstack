@@ -2,11 +2,26 @@
 
 这是 **Chenji Learning Hub 的全栈版本**——一个可以用 GitHub 登录的个人博客 / 学习工作台。
 
+> ✅ **已上线**：https://chenji.felixfu.xyz
+> GitHub OAuth 登录可用，`chenji0421` 可以进入管理后台；GitHub Actions 自动部署、Docker / Nginx 部署流程均已跑通。
+
 - **访客**：无需登录即可查看文章、公开计划（年表 / 月表 / 日计划）
 - **站长**：通过 **GitHub OAuth** 登录后，可以在网站上**直接写文章、修改计划**，不用再改代码
-- 第一版使用 **SQLite**，数据就存在本地文件里；后续可以平滑升级到 PostgreSQL
+- 本地开发用 **SQLite**，数据存在本地文件；线上部署使用 **Render PostgreSQL**，文章和计划保存在**服务器数据库**里，**不依赖浏览器 localStorage**
 
-> 项目只有真实内容：数据库初始为空，不生成假文章、假计划、假浏览量。
+> 项目只有真实内容：数据库初始为空，不生成假文章、假计划、假浏览量、假点赞、假评论。
+
+---
+
+## 功能模块
+
+| 模块 | 说明 |
+|---|---|
+| **GitHub 登录** | 通过 GitHub OAuth 授权登录，后端签发 JWT；仅管理员（默认 `chenji0421`）可管理内容 |
+| **管理员后台** | 登录后进入工作台，顶部显示当前用户和角色；非管理员 / 未登录用户无法进入 |
+| **文章管理** | 新增 / 编辑 / 删除文章，可存草稿或发布；草稿不会出现在访客文章页 |
+| **计划管理** | 新增 / 编辑 / 删除每日计划，支持年表 / 月表 / 日计划三视图 |
+| **访客浏览** | 免登录查看已发布文章和公开计划，文章详情支持 Markdown 渲染 |
 
 ---
 
@@ -23,10 +38,11 @@
 
 | 层 | 技术 |
 |---|---|
-| Frontend | React + Vite |
-| Backend | FastAPI |
-| Database | SQLite（第一版，后续可换 PostgreSQL） |
+| Frontend | React + Vite（线上托管于 Vercel） |
+| Backend | FastAPI（线上托管于 Render / 服务器） |
+| Database | 本地 SQLite · 线上 Render PostgreSQL |
 | Auth | GitHub OAuth + JWT |
+| Deploy | GitHub Actions + Docker / Nginx（服务器） |
 
 ## 目录结构
 
@@ -133,11 +149,11 @@ npm run dev
 
 ---
 
-## 本地数据保存在哪里
+## 数据保存在哪里
 
-### 数据库文件
+### 本地开发：SQLite 数据库文件
 
-文章、计划、用户信息（GitHub 登录账号）全部保存在 **SQLite 数据库文件**里：
+本地跑开发服时，文章、计划、用户信息（GitHub 登录账号）全部保存在 **SQLite 数据库文件**里：
 
 - **文件位置**：`backend/chenji_hub.db`
 - **三张表**：
@@ -146,7 +162,17 @@ npm run dev
   - `users` —— GitHub 登录用户
 
 `DATABASE_URL` 默认是 `sqlite:///./chenji_hub.db`，在 `backend/` 目录下启动后端时，
-文件就落在 `backend/chenji_hub.db`。第一版不需要额外的数据库服务，表在启动时自动创建。
+文件就落在 `backend/chenji_hub.db`。本地不需要额外的数据库服务，表在启动时自动创建。
+
+### 线上：服务器数据库（PostgreSQL）
+
+线上部署时，文章和计划保存在**服务器数据库**（Render PostgreSQL）里，
+通过 `DATABASE_URL` 环境变量连接，**不依赖浏览器 localStorage**。
+任何电脑、任何浏览器打开 https://chenji.felixfu.xyz 都能看到同一份数据，
+管理后台的增删改实时写入服务器数据库。
+
+> 本地数据库和线上数据库是**两份独立的数据**：本地写的内容不会自动同步到线上，
+> 反之亦然。想在线上发布内容，登录线上管理后台去写。
 
 ### 关闭 VS Code 会怎样
 
@@ -175,6 +201,8 @@ python scripts/restore_db.py --backup chenji_hub_20260809_203000.db --yes
 ```
 
 > 建议定期备份：数据只有这一份，误删 / 误改没有撤销。手动跑或者加个计划任务（如每天定时执行 `backup_db.py`）都行。
+
+> **线上数据库备份**：线上用的是 Render PostgreSQL，Render 控制台（数据库面板 → Backups）自带自动备份，建议开启。需要本地留存时，登录 Render 后用 `pg_dump` 导出即可。本地的 `backup_db.py` 只针对本地 SQLite 库，不直接操作线上数据库。
 
 ---
 
@@ -344,8 +372,11 @@ GitHub Pages 只托管**静态文件**，而这个全栈项目需要一个常驻
 
 ---
 
-## 说明与下一步
+## 后续计划
 
-- **不造假**：没有浏览量、阅读时间等字段，只有真实内容
-- **SQLite**：第一版不需要额外数据库服务，表在启动时自动创建
-- 后续可以考虑：Alembic 迁移、内容 Markdown 渲染增强、图片上传、分页、部署脚本（前端打包后由 FastAPI 托管）
+- **UI 优化**：持续打磨工作台布局、卡片样式、移动端适配
+- **数据库备份**：已提供 `scripts/backup_db.py` / `restore_db.py`，建议定期执行（如每天定时）
+- **Markdown 编辑器增强**：支持更多语法（表格、图片上传、代码高亮）
+- **计划日历视图增强**：更丰富的日历交互与统计
+- **Alembic 迁移**：表结构变更时做可追溯迁移
+- **分页**：文章 / 计划数量增多时分页展示

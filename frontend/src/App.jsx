@@ -71,7 +71,7 @@ export default function App() {
   } else if (route === "admin") {
     page = <Admin user={user} />;
   } else {
-    page = <Home />;
+    page = <Home user={user} />;
   }
 
   // 左侧导航高亮判断
@@ -84,28 +84,42 @@ export default function App() {
     return false;
   };
 
+  const navItems = [
+    { key: "", icon: "🏠", label: "首页" },
+    { key: "articles", icon: "📝", label: "文章" },
+    { key: "plans", icon: "🗓️", label: "计划" },
+  ];
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <a href="#/" className="logo">
-          📚 Chenji Learning Hub
+          <span className="logo-mark">📚</span>
+          <span className="logo-text">
+            <span className="logo-title">Chenji Learning Hub</span>
+            <span className="logo-sub">记录学习 · 项目 · 计划</span>
+          </span>
         </a>
         <nav className="sidebar-nav">
-          <a href="#/" className={isActive("") ? "active" : ""}>
-            首页
-          </a>
-          <a href="#/articles" className={isActive("articles") ? "active" : ""}>
-            文章
-          </a>
-          <a href="#/plans" className={isActive("plans") ? "active" : ""}>
-            计划
-          </a>
+          <div className="sidebar-nav-label">导航</div>
+          {navItems.map((item) => (
+            <a
+              key={item.key}
+              href={`#/${item.key}`}
+              className={isActive(item.key) ? "active" : ""}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              {item.label}
+            </a>
+          ))}
           {user ? (
             <a href="#/admin" className={isActive("admin") ? "active" : ""}>
+              <span className="nav-icon">⚙️</span>
               管理
             </a>
           ) : (
             <a href="#/login" className={isActive("login") ? "active" : ""}>
+              <span className="nav-icon">🔑</span>
               登录
             </a>
           )}
@@ -114,17 +128,28 @@ export default function App() {
           <div className="sidebar-user">
             {user ? (
               <>
-                <img src={user.avatar_url} alt="" width="28" height="28" className="avatar" />
-                <span className="sidebar-user-name" title={user.username}>
-                  {user.username}
-                </span>
+                <img src={user.avatar_url} alt="" width="32" height="32" className="avatar" />
+                <div className="sidebar-user-info">
+                  <span className="sidebar-user-name" title={user.username}>
+                    {user.username}
+                  </span>
+                  {user.is_admin ? (
+                    <span className="role-badge">管理员</span>
+                  ) : (
+                    <span className="sidebar-user-role">访客</span>
+                  )}
+                </div>
                 <button type="button" className="nav-logout" onClick={handleLogout}>
                   退出
                 </button>
               </>
             ) : (
               <>
-                <span className="muted">未登录</span>
+                <span className="avatar" style={{ width: 32, height: 32 }} />
+                <div className="sidebar-user-info">
+                  <span className="sidebar-user-name">访客</span>
+                  <span className="sidebar-user-role">未登录</span>
+                </div>
                 <a href="#/login" className="nav-logout">
                   去登录
                 </a>

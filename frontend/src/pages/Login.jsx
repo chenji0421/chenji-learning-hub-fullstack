@@ -26,20 +26,28 @@ export default function Login() {
   }, []);
 
   return (
-    <div className="login">
-      <h1>登录</h1>
-      <p>
-        使用 GitHub 账号登录。只有 GitHub 用户名为 <code>chenji0421</code>{" "}
-        的管理员可以管理内容，访客无需登录即可查看文章和计划。
-      </p>
-      {error && <div className="error-box">{error}</div>}
-      {url ? (
-        <a className="btn btn-primary" href={url}>
-          使用 GitHub 登录
-        </a>
-      ) : (
-        !error && <div className="loading">正在获取登录地址…</div>
-      )}
+    <div className="login-page">
+      <div className="login">
+        <span className="login-logo">📚</span>
+        <h1>登录 Chenji Learning Hub</h1>
+        <p>
+          使用 GitHub 账号登录。只有管理员（<code>chenji0421</code>）可以管理内容，
+          访客无需登录即可查看文章和计划。
+        </p>
+        {error && <div className="error-box">{error}</div>}
+        {url ? (
+          <a className="btn btn-primary" href={url}>
+            使用 GitHub 登录
+          </a>
+        ) : (
+          !error && <div className="loading">正在获取登录地址…</div>
+        )}
+        <ul className="login-feature-list">
+          <li>✅ 登录后可进入管理后台写文章</li>
+          <li>✅ 可维护每天的计划</li>
+          <li>✅ 非管理员仅可浏览，不能修改</li>
+        </ul>
+      </div>
     </div>
   );
 }

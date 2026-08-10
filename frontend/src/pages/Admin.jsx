@@ -34,7 +34,7 @@ export default function Admin({ user }) {
   const [planForm, setPlanForm] = useState(EMPTY_PLAN);
   const [editingArticle, setEditingArticle] = useState(null);
   const [editingPlan, setEditingPlan] = useState(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(null);
   // 计划月历：当前展示的月份 + 选中的日期（默认今天）
   const [planMonth, setPlanMonth] = useState(() => {
     const now = new Date();
@@ -79,9 +79,10 @@ export default function Admin({ user }) {
     );
   }
 
-  const showMsg = (msg) => {
-    setMessage(msg);
-    setTimeout(() => setMessage(""), 2500);
+  const showMsg = (msg, type = "success") => {
+    setMessage({ text: msg, type });
+    // 错误提示多停留一会，方便用户看清失败原因
+    setTimeout(() => setMessage(null), type === "error" ? 5000 : 2500);
   };
 
   const cancelEdit = () => {
@@ -115,7 +116,7 @@ export default function Admin({ user }) {
       setEditingArticle(null);
       refresh();
     } catch (err) {
-      showMsg(err.message);
+      showMsg(err.message, "error");
     }
   };
 
@@ -140,7 +141,7 @@ export default function Admin({ user }) {
       showMsg("文章已删除");
       refresh();
     } catch (err) {
-      showMsg(err.message);
+      showMsg(err.message, "error");
     }
   };
 
@@ -159,7 +160,7 @@ export default function Admin({ user }) {
       setEditingPlan(null);
       refresh();
     } catch (err) {
-      showMsg(err.message);
+      showMsg(err.message, "error");
     }
   };
 
@@ -186,7 +187,7 @@ export default function Admin({ user }) {
       showMsg("计划已删除");
       refresh();
     } catch (err) {
-      showMsg(err.message);
+      showMsg(err.message, "error");
     }
   };
 
@@ -221,11 +222,15 @@ export default function Admin({ user }) {
       <div className="wb-head">
         <div>
           <h1>管理后台</h1>
-          <p className="muted">
-            工作台 · {user.username}（管理员）
-          </p>
+          <div className="who">
+            <img src={user.avatar_url} alt="" width="26" height="26" className="avatar" />
+            <span>{user.username}</span>
+            <span className="role-badge">管理员</span>
+          </div>
         </div>
-        {message && <div className="toast">{message}</div>}
+        {message && (
+          <div className={`toast toast-${message.type}`}>{message.text}</div>
+        )}
       </div>
 
       <div className="wb-stats">

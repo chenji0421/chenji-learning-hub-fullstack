@@ -115,6 +115,14 @@ export const TOOLBOX_GROUPS = [
         detail:
           "打开 frontend/src/pages/Home.jsx 修改文字，然后依次执行：git add .、git commit -m \"更新首页文案\"、git push。push 后 GitHub Actions 会自动重新部署，刷新线上网站即可看到。",
       },
+      {
+        name: "添加音乐到音乐页",
+        what: "把有权使用的音频文件放进 frontend/public/music/，登记到数据文件后就能在音乐页播放。",
+        when: "想给个人音乐台加一首真实的歌、练习音频或环境音时。",
+        action: "查看添加方法",
+        detail:
+          "① 把 mp3/wav/ogg 文件放到 frontend/public/music/；② 打开 frontend/src/data/music.js，照示例添加 title、artist、src；③ cd frontend && npm run build 确认构建通过；④ git add .、git commit -m \"添加音乐\"、git push，GitHub Actions 会自动重新部署。只放自己有权的音乐（原创 / 授权 / 免费可商用），不放版权歌曲。",
+      },
     ],
   },
   {

@@ -15,6 +15,18 @@
 // - items：具体更新点
 export const changelog = [
   {
+    version: "v1.5.1",
+    date: "2026-08-10",
+    type: "新增",
+    title: "音乐页添加第一首真实音乐",
+    summary: "音乐页开始支持站内真实音频文件，并加入第一首音乐《英雄主义 - 在虚无中永存》。",
+    items: [
+      "音乐页支持读取 frontend/public/music 中的站内音频文件",
+      "添加《英雄主义 - 在虚无中永存》到站内音乐库",
+      "补充音乐文件添加说明和 flac 格式说明"
+    ],
+  },
+  {
     version: "v1.5.0",
     date: "2026-08-10",
     type: "新增",

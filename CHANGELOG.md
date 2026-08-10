@@ -4,17 +4,40 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
-## [Unreleased] — 第一阶段：品牌替换 + 文档完善 + UI 小幅打磨
+## [1.2.0] — 2026-08-10 · 高仿架构升级：工作台化 + 内容中心 + 文档体系
 
-### 变更
-- 品牌统一：移除文档中残留的旧品牌名（`Felix Fu's server`），站点统一使用 Chenji / chenji0421 / chenji.felixfu.xyz
-- 新增 `CHANGELOG.md`，记录项目变更历史
-- README 补充更新日志入口
+### 前端架构升级
+- 侧边栏支持**展开 / 收起**（工作台模式，状态存 localStorage），收起后只显示图标
+- 新增**浅色 / 深色模式**切换（跟随系统偏好 + 手动选择，`<html data-theme>` + CSS 变量）
+- 导航重构：首页 / 文章 / **技术笔记** / 计划 / **工具箱** / **游戏** / **账号** / 管理（管理员）/ 登录（访客）
+- 新增页面：
+  - **技术笔记**（`Notes`）：与普通文章共用 Article 模型，按分类「技术笔记 / 笔记」区分
+  - **工具箱**（`Toolbox`）：真实通用学习 / 开发资源入口（GitHub、MDN、Python、pandas、FastAPI、React、Vite 等）
+  - **游戏**（`Game`）：空状态 + 预留 iframe 容器，不放假游戏
+  - **账号中心**（`Account`）：显示当前用户、GitHub 用户名、角色（admin / reader）、退出登录
 
-### UI 小幅优化
-- 站点添加 favicon（emoji）与 `meta description`
-- 补充键盘焦点可见样式（`:focus-visible`），键盘 / 无障碍浏览体验更好
-- 页面滚动平滑化（`scroll-behavior: smooth`）
+### 首页升级
+- Hero 区：标题 + 副标题 + 简介（真实介绍）
+- 4 个状态卡：已发布文章数 / 公开计划数 / 技术笔记数 / 后端健康（全部来自真实 API，为 0 显示空状态）
+- 最近文章、近期计划、快捷入口、项目说明
+
+### 管理后台面板化
+- 后台改为标签页：**总览 / 写文章 / 内容库 / 计划管理 / 运维状态**
+- 总览：统计卡 + 快捷操作 + 内容统计
+- 内容库：按全部 / 已发布 / 草稿筛选，支持发布 / 转草稿 / 编辑 / 删除
+- 运维状态：线上地址、部署方式、GitHub 仓库、后端健康检查（`/api/health`）
+
+### 文档与品牌
+- 新增 `docs/` 文档体系：`docs/README.md` + 6 篇指南（GitHub 登录、自动部署、云服务器部署、数据库说明、备份恢复、服务器运维手册）
+- 全站品牌统一为 Chenji / chenji0421 / chenji.felixfu.xyz，清理文档残留的旧品牌名
+- README 补充目录结构与后续计划
+- 新增 `.github/workflows/ci.yml`：push / PR 时检查后端 `compileall` + 前端 `npm run build` + compose 配置
+- 站点 favicon（📚）+ `meta description` + `:focus-visible` 焦点环 + 平滑滚动
+
+### 未改动（保持线上稳定）
+- 后端接口路径、数据库结构、GitHub OAuth 逻辑零改动
+- Docker / Nginx / GitHub Actions 部署体系未动（`deploy.yml` 保持可用）
+- 未生成任何假文章、假计划、假浏览量、假点赞、假评论
 
 ---
 

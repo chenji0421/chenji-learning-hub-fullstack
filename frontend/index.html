@@ -13,6 +13,21 @@
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>"
     />
     <title>Chenji Learning Hub</title>
+    <script>
+      // 在 React 挂载前应用主题，避免刷新时白屏/闪错颜色
+      (function () {
+        try {
+          var saved = localStorage.getItem("chl_theme");
+          var dark = saved
+            ? saved === "dark"
+            : window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (e) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

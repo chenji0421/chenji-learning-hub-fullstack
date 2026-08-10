@@ -27,7 +27,17 @@ const STATUS_CLASS = { 进行中: "pending", 已完成: "done", 未开始: "todo
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 const pad = (n) => String(n).padStart(2, "0");
 
+// 后台标签页：总览 / 写文章 / 内容库 / 计划管理 / 运维状态
+const ADMIN_TABS = [
+  { key: "overview", icon: "📊", label: "总览" },
+  { key: "editor", icon: "✍️", label: "写文章" },
+  { key: "library", icon: "🗃️", label: "内容库" },
+  { key: "plans", icon: "🗓️", label: "计划管理" },
+  { key: "ops", icon: "🛠️", label: "运维状态" },
+];
+
 export default function Admin({ user }) {
+  const [tab, setTab] = useState("overview");
   const [articles, setArticles] = useState([]);
   const [plans, setPlans] = useState([]);
   const [articleForm, setArticleForm] = useState(EMPTY_ARTICLE);
@@ -35,6 +45,8 @@ export default function Admin({ user }) {
   const [editingArticle, setEditingArticle] = useState(null);
   const [editingPlan, setEditingPlan] = useState(null);
   const [message, setMessage] = useState(null);
+  // 内容库：文章状态筛选
+  const [articleFilter, setArticleFilter] = useState("all");
   // 计划月历：当前展示的月份 + 选中的日期（默认今天）
   const [planMonth, setPlanMonth] = useState(() => {
     const now = new Date();
@@ -44,14 +56,31 @@ export default function Admin({ user }) {
     const now = new Date();
     return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   });
+  // 运维状态：后端健康检查
+  const [health, setHealth] = useState(null);
+  const [healthLoading, setHealthLoading] = useState(false);
 
   const refresh = () => {
     api.listArticles().then(setArticles).catch(() => {});
     api.listPlans().then(setPlans).catch(() => {});
   };
 
+  // ---------- 运维状态 ----------
+  const runHealthCheck = async () => {
+    setHealthLoading(true);
+    try {
+      const data = await api.health();
+      setHealth({ ok: true, data });
+    } catch (e) {
+      setHealth({ ok: false, error: e.message });
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
   useEffect(() => {
     refresh();
+    runHealthCheck();
   }, []);
 
   if (!getToken()) {
@@ -74,7 +103,9 @@ export default function Admin({ user }) {
     return (
       <div className="empty-state">
         <h2>没有管理权限</h2>
-        <p>只有 GitHub 用户名为 <code>chenji0421</code> 的管理员可以管理内容。</p>
+        <p>
+          只有 GitHub 用户名为 <code>chenji0421</code> 的管理员可以管理内容。
+        </p>
       </div>
     );
   }
@@ -92,8 +123,17 @@ export default function Admin({ user }) {
     setPlanForm(EMPTY_PLAN);
   };
 
+  const startNewArticle = () => {
+    cancelEdit();
+    setTab("editor");
+  };
+
   // ---------- 文章操作 ----------
   const submitArticle = async (status) => {
+    if (!articleForm.title.trim()) {
+      showMsg("标题不能为空", "error");
+      return;
+    }
     const payload = {
       title: articleForm.title,
       category: articleForm.category,
@@ -115,6 +155,7 @@ export default function Admin({ user }) {
       setArticleForm(EMPTY_ARTICLE);
       setEditingArticle(null);
       refresh();
+      setTab("library");
     } catch (err) {
       showMsg(err.message, "error");
     }
@@ -131,7 +172,19 @@ export default function Admin({ user }) {
       tagsInput: (a.tags || []).join(", "),
       status: a.status,
     });
+    setTab("editor");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const togglePublish = async (a) => {
+    const next = a.status === "published" ? "draft" : "published";
+    try {
+      await api.updateArticle(a.id, { status: next });
+      showMsg(next === "published" ? "文章已发布" : "文章已转为草稿");
+      refresh();
+    } catch (err) {
+      showMsg(err.message, "error");
+    }
   };
 
   const deleteArticle = async (id) => {
@@ -148,6 +201,10 @@ export default function Admin({ user }) {
   // ---------- 计划操作 ----------
   const submitPlan = async (e) => {
     e.preventDefault();
+    if (!planForm.date || !planForm.title.trim()) {
+      showMsg("日期和标题不能为空", "error");
+      return;
+    }
     try {
       if (editingPlan) {
         await api.updatePlan(editingPlan.date, planForm);
@@ -177,6 +234,7 @@ export default function Admin({ user }) {
       review: p.review,
       status: p.status,
     });
+    setTab("plans");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -196,10 +254,14 @@ export default function Admin({ user }) {
     setEditingArticle(null);
     setEditingPlan(null);
     setPlanForm({ ...EMPTY_PLAN, date });
+    setTab("plans");
     document.getElementById("admin-plan-form")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 计划月历：按日期索引 + 当前月的格子数据
+  // ---------- 统计与计划月历 ----------
+  const publishedCount = articles.filter((a) => a.status === "published").length;
+  const draftCount = articles.length - publishedCount;
+
   const byDate = {};
   for (const p of plans) byDate[p.date] = p;
   const [year, month] = planMonth.split("-").map(Number);
@@ -215,7 +277,10 @@ export default function Admin({ user }) {
   const nextMonth = month === 12 ? `${year + 1}-01` : `${year}-${pad(month + 1)}`;
   const dayPlan = byDate[selectedDate] || null;
 
-  const draftCount = articles.filter((a) => a.status !== "published").length;
+  const filteredArticles =
+    articleFilter === "all"
+      ? articles
+      : articles.filter((a) => a.status === articleFilter);
 
   return (
     <div className="admin workbench">
@@ -228,29 +293,96 @@ export default function Admin({ user }) {
             <span className="role-badge">管理员</span>
           </div>
         </div>
-        {message && (
-          <div className={`toast toast-${message.type}`}>{message.text}</div>
-        )}
+        {message && <div className={`toast toast-${message.type}`}>{message.text}</div>}
       </div>
 
-      <div className="wb-stats">
-        <div className="stat-card">
-          <div className="stat-num">{articles.length}</div>
-          <div className="stat-label">全部文章</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-num">{draftCount}</div>
-          <div className="stat-label">草稿</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-num">{plans.length}</div>
-          <div className="stat-label">公开计划</div>
-        </div>
+      {/* 后台标签页导航 */}
+      <div className="admin-tabs">
+        {ADMIN_TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            className={`admin-tab${tab === t.key ? " active" : ""}`}
+            onClick={() => setTab(t.key)}
+          >
+            <span className="admin-tab-icon">{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <div className="wb-grid">
+      {/* ============ 总览 ============ */}
+      {tab === "overview" && (
+        <>
+          <div className="wb-stats">
+            <div className="stat-card">
+              <div className="stat-num">{publishedCount}</div>
+              <div className="stat-label">已发布文章</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-num">{draftCount}</div>
+              <div className="stat-label">草稿</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-num">{plans.length}</div>
+              <div className="stat-label">公开计划</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-num">{health ? (health.ok ? "✅" : "❌") : "…"}</div>
+              <div className="stat-label">后端健康</div>
+              <p className="stat-hint">
+                {healthLoading ? "检查中…" : health ? (health.ok ? "正常" : "异常") : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="wb-grid">
+            <section className="wb-card">
+              <h2>⚡ 快捷操作</h2>
+              <div className="home-links">
+                <button className="btn btn-primary" onClick={startNewArticle}>
+                  ✍️ 写新文章
+                </button>
+                <button className="btn" onClick={() => setTab("library")}>
+                  🗃️ 内容库
+                </button>
+                <button className="btn" onClick={() => setTab("plans")}>
+                  🗓️ 计划管理
+                </button>
+                <button className="btn" onClick={() => setTab("ops")}>
+                  🛠️ 运维状态
+                </button>
+              </div>
+            </section>
+
+            <section className="wb-card">
+              <h2>📊 内容统计</h2>
+              <ul className="admin-list">
+                <li>
+                  <span className="admin-item">已发布文章</span>
+                  <span className="badge badge-pub">{publishedCount}</span>
+                </li>
+                <li>
+                  <span className="admin-item">草稿</span>
+                  <span className="badge badge-draft">{draftCount}</span>
+                </li>
+                <li>
+                  <span className="admin-item">公开计划</span>
+                  <span className="badge badge-pub">{plans.length}</span>
+                </li>
+              </ul>
+              <p className="muted" style={{ marginTop: 14 }}>
+                所有数量均来自真实数据库，不含假数据。
+              </p>
+            </section>
+          </div>
+        </>
+      )}
+
+      {/* ============ 写文章 ============ */}
+      {tab === "editor" && (
         <section className="wb-card">
-          <h2>📝 文章管理</h2>
+          <h2>{editingArticle ? "✍️ 编辑文章" : "✍️ 写新文章"}</h2>
           <div className="editor-layout">
             <div className="editor-main">
               <div className="form-group">
@@ -267,14 +399,16 @@ export default function Admin({ user }) {
                   <input
                     value={articleForm.category}
                     onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
+                    placeholder="如：技术笔记 / 随笔"
                   />
+                  <span className="label-hint">填「技术笔记」会出现在技术笔记中心</span>
                 </div>
                 <div className="form-group">
                   <label>标签（逗号分隔）</label>
                   <input
                     value={articleForm.tagsInput}
                     onChange={(e) => setArticleForm({ ...articleForm, tagsInput: e.target.value })}
-                    placeholder="GitHub Pages, 前端"
+                    placeholder="Python, FastAPI"
                   />
                 </div>
               </div>
@@ -286,7 +420,7 @@ export default function Admin({ user }) {
                 />
               </div>
               <div className="form-group">
-                <label>正文（Markdown：支持 # 标题、- 列表、{">"} 引用、段落）</label>
+                <label>正文（Markdown：支持 # 标题、- 列表、{">"} 引用、代码块、加粗、行内代码、链接）</label>
                 <textarea
                   rows="14"
                   value={articleForm.content}
@@ -324,13 +458,41 @@ export default function Admin({ user }) {
               )}
             </div>
           </div>
+        </section>
+      )}
 
-          <h3 style={{ margin: "20px 0 10px" }}>文章列表（{articles.length}）</h3>
-          {articles.length === 0 ? (
-            <p className="muted">还没有文章，用上面的表单创建第一篇。</p>
+      {/* ============ 内容库 ============ */}
+      {tab === "library" && (
+        <section className="wb-card">
+          <div className="library-head">
+            <h2>🗃️ 内容库（{articles.length}）</h2>
+            <button className="btn btn-primary btn-sm" onClick={startNewArticle}>
+              + 新文章
+            </button>
+          </div>
+
+          <div className="filter-bar">
+            {[
+              { key: "all", label: `全部（${articles.length}）` },
+              { key: "published", label: `已发布（${publishedCount}）` },
+              { key: "draft", label: `草稿（${draftCount}）` },
+            ].map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                className={`filter-chip${articleFilter === f.key ? " active" : ""}`}
+                onClick={() => setArticleFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {filteredArticles.length === 0 ? (
+            <p className="muted">这个分类下还没有文章。</p>
           ) : (
             <ul className="admin-list">
-              {articles.map((a) => (
+              {filteredArticles.map((a) => (
                 <li key={a.id}>
                   <span className="admin-item">
                     {a.status === "published" ? (
@@ -338,12 +500,13 @@ export default function Admin({ user }) {
                     ) : (
                       <span className="badge badge-draft">草稿</span>
                     )}
-                    {a.title}
-                    {a.tags && a.tags.length > 0 && (
-                      <span className="muted"> · {a.tags.join(" / ")}</span>
-                    )}
+                    <span className="admin-item-title">{a.title}</span>
+                    {a.category && <span className="muted">· {a.category}</span>}
                   </span>
                   <span className="admin-actions">
+                    <button onClick={() => togglePublish(a)}>
+                      {a.status === "published" ? "转草稿" : "发布"}
+                    </button>
                     <button onClick={() => editArticle(a)}>编辑</button>
                     <button className="danger" onClick={() => deleteArticle(a.id)}>
                       删除
@@ -354,7 +517,10 @@ export default function Admin({ user }) {
             </ul>
           )}
         </section>
+      )}
 
+      {/* ============ 计划管理 ============ */}
+      {tab === "plans" && (
         <section className="wb-card">
           <h2>🗓️ 计划管理</h2>
           <div className="plans-module-body">
@@ -407,9 +573,7 @@ export default function Admin({ user }) {
                   <>
                     <p>
                       <b>{selectedDate}</b> · {dayPlan.title}
-                      <span
-                        className={`status ${STATUS_CLASS[dayPlan.status] || "pending"}`}
-                      >
+                      <span className={`status ${STATUS_CLASS[dayPlan.status] || "pending"}`}>
                         {dayPlan.status}
                       </span>
                     </p>
@@ -553,7 +717,64 @@ export default function Admin({ user }) {
             </div>
           </div>
         </section>
-      </div>
+      )}
+
+      {/* ============ 运维状态 ============ */}
+      {tab === "ops" && (
+        <div className="wb-grid">
+          <section className="wb-card">
+            <h2>🛠️ 运维状态</h2>
+            <ul className="ops-list">
+              <li>
+                <span className="ops-label">线上地址</span>
+                <a href="https://chenji.felixfu.xyz" target="_blank" rel="noopener noreferrer">
+                  https://chenji.felixfu.xyz ↗
+                </a>
+              </li>
+              <li>
+                <span className="ops-label">部署方式</span>
+                <span>Docker + GitHub Actions（push 到 main 自动部署）</span>
+              </li>
+              <li>
+                <span className="ops-label">GitHub 仓库</span>
+                <a
+                  href="https://github.com/chenji0421/chenji-learning-hub-fullstack"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  chenji0421/chenji-learning-hub-fullstack ↗
+                </a>
+              </li>
+              <li>
+                <span className="ops-label">健康检查</span>
+                <span>
+                  {healthLoading
+                    ? "检查中…"
+                    : health
+                      ? health.ok
+                        ? `✅ ${JSON.stringify(health.data)}`
+                        : `❌ ${health.error}`
+                      : "未检查"}
+                </span>
+              </li>
+            </ul>
+            <div className="form-actions">
+              <button className="btn" onClick={runHealthCheck}>
+                重新检查后端健康
+              </button>
+            </div>
+          </section>
+
+          <section className="wb-card">
+            <h2>📋 说明</h2>
+            <p className="muted" style={{ margin: 0 }}>
+              后台不会提供在网页里直接重启服务器或删除数据库等危险操作。
+              部署与数据维护请通过 GitHub Actions 和服务器脚本完成，详见{" "}
+              <code>docs/guides/</code>。
+            </p>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

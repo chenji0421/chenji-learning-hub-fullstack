@@ -76,12 +76,13 @@ The repository includes `.github/workflows/deploy.yml`. It deploys automatically
 Add these repository secrets before relying on automatic deploys:
 
 ```text
-DEPLOY_HOST=47.242.176.227
 DEPLOY_USER=<server user>
-DEPLOY_PORT=22
 DEPLOY_PATH=/opt/chenji-learning-hub
 DEPLOY_SSH_KEY=<private deploy key>
 ```
+
+The server IP (`47.242.176.227`) and SSH port (`22`) are hardcoded in the workflow,
+so no `DEPLOY_HOST` / `DEPLOY_PORT` secrets are needed.
 
 The server-side `.env` file must still be created manually and must not be committed.
 

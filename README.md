@@ -20,10 +20,14 @@
 | 模块 | 说明 |
 |---|---|
 | **GitHub 登录** | 通过 GitHub OAuth 授权登录，后端签发 JWT；仅管理员（默认 `chenji0421`）可管理内容 |
-| **管理员后台** | 登录后进入工作台，顶部显示当前用户和角色；非管理员 / 未登录用户无法进入 |
+| **管理员后台** | 面板化工作台：总览 / 写文章 / 内容库 / 计划管理 / 运维状态；非管理员 / 未登录用户无法进入 |
 | **文章管理** | 新增 / 编辑 / 删除文章，可存草稿或发布；草稿不会出现在访客文章页 |
+| **技术笔记** | 与普通文章共用模型，按分类「技术笔记 / 笔记」归入独立中心 |
 | **计划管理** | 新增 / 编辑 / 删除每日计划，支持年表 / 月表 / 日计划三视图 |
-| **访客浏览** | 免登录查看已发布文章和公开计划，文章详情支持 Markdown 渲染 |
+| **工具箱** | 真实的学习 / 开发资源入口（GitHub、MDN、Python、FastAPI 等） |
+| **游戏** | 小游戏入口（暂为空状态，预留 iframe 容器） |
+| **账号中心** | 查看当前用户、GitHub 用户名、角色，支持退出登录 |
+| **访客浏览** | 免登录查看首页、文章、技术笔记、公开计划、工具箱、游戏 |
 
 ---
 
@@ -50,11 +54,14 @@
 
 ```
 chenji-learning-hub-fullstack/
+├── .github/workflows/        # GitHub Actions
+│   ├── ci.yml                # CI：后端 compileall + 前端 build + compose 校验
+│   └── deploy.yml            # CD：push 到 main 自动 SSH 部署到服务器
 ├── backend/                  # FastAPI 后端
 │   ├── app/
 │   │   ├── main.py           # 应用入口
 │   │   ├── config.py         # 配置（读 .env）
-│   │   ├── database.py       # SQLite 连接
+│   │   ├── database.py       # SQLite / PostgreSQL 连接
 │   │   ├── models.py         # SQLAlchemy 模型
 │   │   ├── schemas.py        # Pydantic 模型
 │   │   ├── auth.py           # GitHub OAuth + JWT
@@ -67,24 +74,39 @@ chenji-learning-hub-fullstack/
 ├── frontend/                 # React + Vite 前端
 │   ├── src/
 │   │   ├── main.jsx
-│   │   ├── App.jsx           # 极简 hash 路由 + 登录态
+│   │   ├── App.jsx           # 极简 hash 路由 + 登录态 + 主题 / 侧边栏状态
 │   │   ├── api.js            # 请求封装
+│   │   ├── data.js           # 静态数据（工具箱入口等）
 │   │   ├── styles.css
 │   │   └── pages/
-│   │       ├── Home.jsx
-│   │       ├── Articles.jsx
+│   │       ├── Home.jsx      # 首页（hero + 状态卡 + 最近内容）
+│   │       ├── Articles.jsx  # 文章中心
+│   │       ├── Notes.jsx     # 技术笔记
 │   │       ├── ArticleDetail.jsx
-│   │       ├── Plans.jsx
+│   │       ├── Plans.jsx     # 计划（年表 / 月表 / 日计划）
+│   │       ├── Toolbox.jsx   # 工具箱
+│   │       ├── Game.jsx      # 游戏（空状态）
+│   │       ├── Account.jsx   # 账号中心
 │   │       ├── Login.jsx
-│   │       └── Admin.jsx
+│   │       └── Admin.jsx     # 管理后台（面板化标签页）
 │   ├── index.html
 │   ├── vercel.json         # Vercel 部署配置（指定前端目录与构建命令）
 │   ├── vite.config.js
 │   └── package.json
+├── deploy/                   # Docker / Nginx 部署配置
+│   ├── backend.Dockerfile
+│   ├── frontend.Dockerfile
+│   ├── frontend.nginx.conf
+│   ├── nginx-host-example.conf
+│   └── SERVER_DEPLOY.md
+├── docs/                     # 维护文档
+│   ├── README.md             # 文档导航
+│   └── guides/               # 6 篇指南（GitHub 登录、自动部署、云部署、数据库、备份恢复、运维）
 ├── scripts/                  # 数据备份 / 恢复脚本
 │   ├── backup_db.py          # 备份 chenji_hub.db 到 backups/
 │   └── restore_db.py         # 从 backups/ 恢复数据库
 ├── backups/                  # 数据库备份目录（脚本自动生成，已 gitignore）
+├── docker-compose.server.yml # 服务器 Docker Compose
 ├── render.yaml               # Render 部署配置（后端服务 + PostgreSQL）
 ├── .env.example              # 环境变量模板（密钥不提交）
 ├── .gitignore
@@ -376,9 +398,17 @@ GitHub Pages 只托管**静态文件**，而这个全栈项目需要一个常驻
 
 ## 后续计划
 
-- **UI 优化**：持续打磨工作台布局、卡片样式、移动端适配
-- **数据库备份**：已提供 `scripts/backup_db.py` / `restore_db.py`，建议定期执行（如每天定时）
 - **Markdown 编辑器增强**：支持更多语法（表格、图片上传、代码高亮）
+- **工具箱后台管理**：管理员可自定义工具链接（新增 ToolboxLink 模型，保存到数据库）
+- **游戏模块**：接入自制的 HTML 小游戏（iframe 容器已预留）
 - **计划日历视图增强**：更丰富的日历交互与统计
 - **Alembic 迁移**：表结构变更时做可追溯迁移
 - **分页**：文章 / 计划数量增多时分页展示
+- **搜索**：文章标题 / 标签 / 正文关键字搜索
+- **CI 扩展**：在 CI 里跑后端单元测试（目前只做 compileall + import 检查）
+
+## 体验特性
+
+- 左侧侧边栏支持**展开 / 收起**（工作台模式）
+- 支持**浅色 / 深色模式**切换（跟随系统偏好，也可手动选择）
+- 后台为面板化布局：总览 / 写文章 / 内容库 / 计划管理 / 运维状态

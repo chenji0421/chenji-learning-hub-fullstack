@@ -7,6 +7,7 @@ import Notes from "./pages/Notes.jsx";
 import Plans from "./pages/Plans.jsx";
 import Music from "./pages/Music.jsx";
 import Toolbox from "./pages/Toolbox.jsx";
+import Changelog from "./pages/Changelog.jsx";
 import Game from "./pages/Game.jsx";
 import Account from "./pages/Account.jsx";
 import Login from "./pages/Login.jsx";
@@ -109,6 +110,8 @@ export default function App() {
     page = <Music />;
   } else if (route === "toolbox") {
     page = <Toolbox />;
+  } else if (route === "changelog") {
+    page = <Changelog />;
   } else if (route === "game") {
     page = <Game />;
   } else if (route === "account") {
@@ -128,6 +131,7 @@ export default function App() {
     if (key === "plans") return route === "plans" || route.startsWith("plans/");
     if (key === "music") return route === "music";
     if (key === "toolbox") return route === "toolbox";
+    if (key === "changelog") return route === "changelog";
     if (key === "game") return route === "game";
     if (key === "account") return route === "account";
     if (key === "admin") return route === "admin";
@@ -143,6 +147,7 @@ export default function App() {
     { key: "plans", icon: "🗓️", label: "计划" },
     { key: "music", icon: "🎵", label: "音乐" },
     { key: "toolbox", icon: "🧰", label: "工具箱" },
+    { key: "changelog", icon: "📜", label: "更新日志" },
     { key: "game", icon: "🎮", label: "游戏" },
   ];
   const userItems = [{ key: "account", icon: "👤", label: "账号" }];

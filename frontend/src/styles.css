@@ -3695,3 +3695,170 @@ details.tool-card[open] {
     text-align: center;
   }
 }
+
+/* ============================================================
+   更新日志页
+   ============================================================ */
+.changelog {
+  max-width: 880px;
+}
+
+.changelog-head {
+  margin-bottom: var(--sp-6);
+}
+
+/* 顶部「当前版本」提示 */
+.changelog-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: var(--sp-3);
+}
+
+.changelog-current-date {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+/* 时间线：最新版本在最上面 */
+.changelog-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.changelog-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-5) var(--sp-6);
+}
+
+.changelog-head-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+
+.changelog-version {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.changelog-date {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.changelog-title {
+  font-size: 1.05rem;
+  margin: 0 0 var(--sp-2);
+  overflow-wrap: anywhere;
+}
+
+.changelog-summary {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  margin: 0 0 var(--sp-3);
+  overflow-wrap: anywhere;
+}
+
+.changelog-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.changelog-items li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.changelog-items li::before {
+  content: "•";
+  position: absolute;
+  left: 4px;
+  color: var(--primary);
+}
+
+/* 类型标签：新增绿 / 优化蓝 / 修复橙 / 部署紫 / 文档灰 */
+.type-tag {
+  display: inline-block;
+  border-radius: 6px;
+  padding: 1px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.type-new {
+  background: var(--success-soft);
+  color: var(--success);
+  border: 1px solid rgba(26, 127, 55, 0.25);
+}
+
+.type-opt {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid var(--primary-soft-border);
+}
+
+.type-fix {
+  background: #fff4e6;
+  color: #b45309;
+  border: 1px solid rgba(180, 83, 9, 0.28);
+}
+
+.type-deploy {
+  background: #f4efff;
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.28);
+}
+
+.type-doc {
+  background: var(--bg-subtle);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+:root[data-theme="dark"] .type-fix {
+  background: rgba(251, 191, 36, 0.14);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+:root[data-theme="dark"] .type-deploy {
+  background: rgba(167, 139, 250, 0.14);
+  color: #a78bfa;
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+@media (max-width: 700px) {
+  .changelog-date {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .changelog-card {
+    padding: var(--sp-4);
+  }
+
+  .changelog-current {
+    gap: 8px;
+  }
+}

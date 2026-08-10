@@ -1,27 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
+import { changelog } from "../data/changelog.js";
 
 // 首页的技术笔记计数与 Notes 页保持同一分类约定
 const NOTE_CATEGORIES = ["技术笔记", "笔记"];
-
-// 真实项目迭代记录（与 CHANGELOG.md 一致，都是真实发生过的版本）
-const UPDATES = [
-  {
-    version: "v1.2.0",
-    date: "2026-08",
-    text: "工具箱重构为「学习与维护工具箱」，新增 CI 检查与部署指南",
-  },
-  {
-    version: "v1.1.0",
-    date: "2026-08",
-    text: "UI 工作台化：侧边栏导航、深浅色模式、后台面板化、六篇部署文档",
-  },
-  {
-    version: "v1.0.0",
-    date: "2026-08",
-    text: "线上部署跑通：GitHub 登录、管理员后台、文章与计划系统上线",
-  },
-];
 
 export default function Home({ user }) {
   const [articles, setArticles] = useState(null);
@@ -206,18 +188,29 @@ export default function Home({ user }) {
         </div>
       </section>
 
-      {/* 最近更新：真实版本记录 */}
+      {/* 最近更新：读取 changelog 数据，展示最新 3 条 */}
       <section className="home-module">
         <h2>🕘 最近更新</h2>
-        <ul className="updates-list">
-          {UPDATES.map((u) => (
-            <li key={u.version}>
-              <span className="updates-version">{u.version}</span>
-              <span className="updates-date">{u.date}</span>
-              <span className="updates-text">{u.text}</span>
-            </li>
-          ))}
-        </ul>
+        {changelog.length === 0 ? (
+          <p className="empty-inline">暂无更新记录。</p>
+        ) : (
+          <>
+            <ul className="updates-list">
+              {changelog.slice(0, 3).map((u) => (
+                <li key={u.version}>
+                  <span className="updates-version">{u.version}</span>
+                  <span className="updates-date">{u.date}</span>
+                  <span className="updates-text">{u.title}</span>
+                </li>
+              ))}
+            </ul>
+            <div style={{ marginTop: 14 }}>
+              <a className="btn btn-sm" href="#/changelog">
+                查看全部更新 →
+              </a>
+            </div>
+          </>
+        )}
       </section>
 
       {/* 最近文章：真实数据，没有就显示空引导 */}

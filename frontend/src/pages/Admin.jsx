@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, getToken } from "../api.js";
 import renderMarkdown from "../markdown.jsx";
+import { changelog } from "../data/changelog.js";
 
 // tags 在表单里用逗号分隔的字符串编辑，提交时拆成数组
 const EMPTY_ARTICLE = {
@@ -836,6 +837,35 @@ export default function Admin({ user }) {
                 重新检查后端健康
               </button>
             </div>
+          </section>
+
+          <section className="wb-card">
+            <h2>📜 版本记录</h2>
+            {changelog.length === 0 ? (
+              <p className="muted">暂无更新记录。</p>
+            ) : (
+              <>
+                <ul className="ops-list">
+                  <li>
+                    <span className="ops-label">当前版本</span>
+                    <span className="badge badge-pub">{changelog[0].version}</span>
+                  </li>
+                  <li>
+                    <span className="ops-label">最近更新</span>
+                    <span>{changelog[0].date}</span>
+                  </li>
+                  <li>
+                    <span className="ops-label">更新标题</span>
+                    <span>{changelog[0].title}</span>
+                  </li>
+                </ul>
+                <div className="form-actions" style={{ marginTop: 14 }}>
+                  <a className="btn" href="#/changelog">
+                    📜 查看更新日志
+                  </a>
+                </div>
+              </>
+            )}
           </section>
 
           <section className="wb-card">

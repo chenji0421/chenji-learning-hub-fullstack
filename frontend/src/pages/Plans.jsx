@@ -153,6 +153,20 @@ export default function Plans({ user, hashPath }) {
     return m;
   }, [plans]);
 
+  // 完成度统计（真实数据：全部来自后端 plans 的 status）
+  // ⚠️ 必须放在下方 early return（error / plans===null）之前——否则首渲染提前 return 会少执行一次 hook，
+  //    下次渲染多出 planStats 这个 useMemo，React 报「Rendered more hooks」#310 直接白屏。
+  const planStats = useMemo(() => {
+    const counts = { 未开始: 0, 进行中: 0, 已完成: 0, 暂停: 0 };
+    for (const p of plans || []) {
+      const label = toStatusLabel(p.status);
+      if (label in counts) counts[label] += 1;
+    }
+    const total = (plans || []).length;
+    const rate = total > 0 ? Math.round((counts["已完成"] / total) * 100) : 0;
+    return { counts, total, rate };
+  }, [plans]);
+
   const startEdit = (plan, fallbackDate) => {
     setEditing(true);
     setEditingDate(plan ? plan.date : null);
@@ -231,18 +245,6 @@ export default function Plans({ user, hashPath }) {
       </div>
     </section>
   );
-
-  // ---------- 完成度统计（真实数据：全部来自后端 plans 的 status） ----------
-  const planStats = useMemo(() => {
-    const counts = { 未开始: 0, 进行中: 0, 已完成: 0, 暂停: 0 };
-    for (const p of plans || []) {
-      const label = toStatusLabel(p.status);
-      if (label in counts) counts[label] += 1;
-    }
-    const total = (plans || []).length;
-    const rate = total > 0 ? Math.round((counts["已完成"] / total) * 100) : 0;
-    return { counts, total, rate };
-  }, [plans]);
 
   const renderStats = () => {
     const { counts, total, rate } = planStats;

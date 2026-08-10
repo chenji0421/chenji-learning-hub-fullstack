@@ -221,7 +221,7 @@ export default function Plans({ user, hashPath }) {
   const header = (
     <section className="plan-header">
       <div className="plan-header-head">
-        <h1>📅 Chenji 的学习计划中心</h1>
+        <h1>📅 沉积的学习计划中心</h1>
         <p>这里记录公开学习计划、每日安排和阶段复盘。访客可以查看，管理员登录后可以编辑。</p>
       </div>
       <div className={`plan-mode-banner ${isAdmin ? "edit" : "view"}`}>
@@ -231,6 +231,95 @@ export default function Plans({ user, hashPath }) {
       </div>
     </section>
   );
+
+  // ---------- 完成度统计（真实数据：全部来自后端 plans 的 status） ----------
+  const planStats = useMemo(() => {
+    const counts = { 未开始: 0, 进行中: 0, 已完成: 0, 暂停: 0 };
+    for (const p of plans || []) {
+      const label = toStatusLabel(p.status);
+      if (label in counts) counts[label] += 1;
+    }
+    const total = (plans || []).length;
+    const rate = total > 0 ? Math.round((counts["已完成"] / total) * 100) : 0;
+    return { counts, total, rate };
+  }, [plans]);
+
+  const renderStats = () => {
+    const { counts, total, rate } = planStats;
+    // 柱高 = 当前数量 / 最大数量 * 100%，全 0 时无柱
+    const bars = STATUS_ORDER.map((label) => ({
+      label,
+      value: counts[label],
+      cls: STATUS_CLASS[label],
+    }));
+    const maxCount = Math.max(...bars.map((b) => b.value));
+    return (
+      <section className="plan-stats">
+        <div className="plan-stats-head">
+          <h2>📊 计划完成度</h2>
+          <p>根据已保存的公开计划状态自动统计，不使用假数据。</p>
+        </div>
+        {total === 0 ? (
+          <div className="plan-stats-empty">
+            暂无计划数据，创建计划后会自动生成完成度统计。
+          </div>
+        ) : (
+          <>
+            <div className="plan-stats-body">
+              <div className="plan-stats-nums">
+                <div className="ps-item">
+                  <span className="ps-num">{total}</span>
+                  <span className="ps-label">总计划</span>
+                </div>
+                <div className="ps-item done">
+                  <span className="ps-num">{counts["已完成"]}</span>
+                  <span className="ps-label">已完成</span>
+                </div>
+                <div className="ps-item pending">
+                  <span className="ps-num">{counts["进行中"]}</span>
+                  <span className="ps-label">进行中</span>
+                </div>
+                <div className="ps-item todo">
+                  <span className="ps-num">{counts["未开始"]}</span>
+                  <span className="ps-label">未开始</span>
+                </div>
+                <div className="ps-item paused">
+                  <span className="ps-num">{counts["暂停"]}</span>
+                  <span className="ps-label">暂停</span>
+                </div>
+                <div className="ps-item rate">
+                  <span className="ps-num">{rate}%</span>
+                  <span className="ps-label">完成率</span>
+                </div>
+              </div>
+              <div className="plan-chart">
+                {bars.map((b) => (
+                  <div key={b.label} className="plan-chart-col">
+                    <div className="plan-chart-track">
+                      <div
+                        className={`plan-chart-bar ${b.cls}`}
+                        style={{
+                          height: `${
+                            maxCount > 0 ? Math.round((b.value / maxCount) * 100) : 0
+                          }%`,
+                        }}
+                        title={`${b.label}：${b.value}`}
+                      />
+                    </div>
+                    <span className="plan-chart-label">{b.label}</span>
+                    <span className="plan-chart-value">{b.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="plan-stats-note">
+              达标程度说明：当前达标程度根据「已完成」计划占全部计划的比例计算。后续如果接入更细的每日任务完成记录，可以升级为更精确的统计。
+            </p>
+          </>
+        )}
+      </section>
+    );
+  };
 
   // ---------- 视图切换 ----------
   const viewSwitch = (
@@ -650,6 +739,7 @@ export default function Plans({ user, hashPath }) {
   return (
     <div className="plans">
       {header}
+      {renderStats()}
       {message && !editing && <div className={`toast toast-${message.type}`}>{message.text}</div>}
       {viewSwitch}
       {editForm}

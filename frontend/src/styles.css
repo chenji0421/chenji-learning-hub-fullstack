@@ -1,5 +1,5 @@
 /* ============================================================
-   Chenji Learning Hub —— 全局样式
+   沉积 Learning Hub —— 全局样式
    设计基调：清爽、现代、克制的个人学习工作台
    - 左侧固定侧边栏 + 右侧主内容区
    - 统一圆角 / 阴影 / 间距
@@ -1509,6 +1509,11 @@ h3 {
   color: var(--warning);
 }
 
+.badge-doing {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
 /* ---------- 计划月历 ---------- */
 .nav-bar {
   display: flex;
@@ -2210,7 +2215,7 @@ details.tool-card[open] {
 }
 
 /* ============================================================
-   UI 工作台升级（参考 Felix 风格，全部换成 Chenji 品牌）
+   UI 工作台升级（参考 Felix 风格，全部换成沉积品牌）
    深色固定侧边栏 · 顶部操作区 · 科技感 Hero · 音乐台 · 迷你播放器
    ============================================================ */
 
@@ -2233,7 +2238,7 @@ details.tool-card[open] {
 .sidebar .logo-mark {
   width: 38px;
   height: 38px;
-  border-radius: 50%; /* 圆形头像占位：C 即 Chenji 的首字母 */
+  border-radius: 50%; /* 圆形头像占位：沉 即 沉积 的首字 */
   font-size: 1.2rem;
   font-weight: 700;
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
@@ -3026,6 +3031,171 @@ details.tool-card[open] {
   justify-content: space-between;
   gap: var(--sp-3);
   flex-wrap: wrap;
+}
+
+/* 完成度统计：全部来自真实 plans 数据，不写死任何数字 */
+.plan-stats {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-5);
+}
+
+.plan-stats-head h2 {
+  font-size: 1.05rem;
+  margin: 0 0 var(--sp-1);
+  color: var(--text);
+}
+
+.plan-stats-head p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.plan-stats-body {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--sp-6);
+  margin-top: var(--sp-4);
+}
+
+.plan-stats-nums {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3);
+}
+
+.ps-item {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  text-align: center;
+}
+
+.ps-num {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.ps-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.ps-item.done .ps-num { color: var(--success); }
+.ps-item.pending .ps-num { color: var(--primary); }
+.ps-item.todo .ps-num { color: var(--text-secondary); }
+.ps-item.paused .ps-num { color: var(--warning); }
+.ps-item.rate .ps-num { color: var(--primary); }
+
+/* CSS 柱状图：四类状态，柱高 = 当前数量 / 最大数量 * 100% */
+.plan-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0 0;
+  border-left: 1px solid var(--border);
+}
+
+.plan-chart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 72px;
+  min-width: 0;
+}
+
+.plan-chart-track {
+  width: 100%;
+  max-width: 46px;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg-subtle);
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+}
+
+.plan-chart-bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  min-height: 2px;
+  transition: height 0.3s ease;
+}
+
+.plan-chart-bar.todo { background: var(--text-secondary); }
+.plan-chart-bar.pending { background: var(--primary); }
+.plan-chart-bar.done { background: var(--success); }
+.plan-chart-bar.paused { background: var(--warning); }
+
+.plan-chart-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.plan-chart-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.plan-stats-note {
+  margin: var(--sp-4) 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  line-height: 1.6;
+}
+
+.plan-stats-empty {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  text-align: center;
+}
+
+/* 移动端：统计区改单列，柱状图保持横向、紧凑布局 */
+@media (max-width: 720px) {
+  .plan-stats-body {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+
+  .plan-chart {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-top: var(--sp-4);
+  }
+
+  .plan-stats-nums {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-2);
+  }
+
+  .ps-item {
+    padding: var(--sp-2);
+  }
+
+  .ps-num {
+    font-size: 1.25rem;
+  }
 }
 
 .day-panel-empty p {

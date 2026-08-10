@@ -74,7 +74,7 @@ export default function Home({ user }) {
           <h1>
             你好，我是
             <br />
-            Chenji
+            沉积
           </h1>
           <p className="hero-tech-sub">一名正在长跑中的长期主义者</p>
           <p className="hero-tech-desc">

@@ -29,7 +29,7 @@ export default function Login() {
     <div className="login-page">
       <div className="login">
         <span className="login-logo">📚</span>
-        <h1>登录 Chenji Learning Hub</h1>
+        <h1>登录 沉积 Learning Hub</h1>
         <p>
           使用 GitHub 账号登录。只有管理员（<code>chenji0421</code>）可以管理内容，
           访客无需登录即可查看文章和计划。

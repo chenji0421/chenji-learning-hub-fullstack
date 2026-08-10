@@ -64,7 +64,7 @@ export default function Toolbox() {
     <div className="toolbox">
       <h1 className="page-title">工具箱</h1>
       <p className="page-sub">
-        Chenji 自己的学习与维护工具箱——只放真正用得上手的东西。
+        沉积自己的学习与维护工具箱——只放真正用得上手的东西。
       </p>
 
       {TOOLBOX_GROUPS.map((group) => (

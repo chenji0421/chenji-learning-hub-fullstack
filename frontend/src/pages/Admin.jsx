@@ -286,6 +286,16 @@ export default function Admin({ user }) {
   const publishedCount = articles.filter((a) => a.status === "published").length;
   const draftCount = articles.length - publishedCount;
 
+  // 计划完成度：真实统计（状态映射与 Plans.jsx 一致，不使用假数据）
+  const planCounts = { 未开始: 0, 进行中: 0, 已完成: 0, 暂停: 0 };
+  for (const p of plans) {
+    const label = toStatusLabel(p.status);
+    if (label in planCounts) planCounts[label] += 1;
+  }
+  const planDone = planCounts["已完成"];
+  const planDoing = planCounts["进行中"];
+  const planRate = plans.length > 0 ? Math.round((planDone / plans.length) * 100) : 0;
+
   const byDate = {};
   for (const p of plans) byDate[p.date] = p;
   const [year, month] = planMonth.split("-").map(Number);
@@ -393,6 +403,18 @@ export default function Admin({ user }) {
                 <li>
                   <span className="admin-item">公开计划</span>
                   <span className="badge badge-pub">{plans.length}</span>
+                </li>
+                <li>
+                  <span className="admin-item">已完成计划</span>
+                  <span className="badge badge-pub">{planDone}</span>
+                </li>
+                <li>
+                  <span className="admin-item">进行中计划</span>
+                  <span className="badge badge-doing">{planDoing}</span>
+                </li>
+                <li>
+                  <span className="admin-item">计划完成率</span>
+                  <span className="badge badge-pub">{planRate}%</span>
                 </li>
                 <li>
                   <span className="admin-item">部署方式</span>

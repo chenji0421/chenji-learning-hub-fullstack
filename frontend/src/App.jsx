@@ -158,10 +158,10 @@ export default function App() {
     <div className="app-shell">
       <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
         <div className="sidebar-head">
-          <a href="#/" className="logo" title="Chenji Learning Hub">
-            <span className="logo-mark">C</span>
+          <a href="#/" className="logo" title="沉积 Learning Hub">
+            <span className="logo-mark">沉</span>
             <span className="logo-text">
-              <span className="logo-title">Chenji</span>
+              <span className="logo-title">沉积</span>
               <span className="logo-sub">chenji0421</span>
             </span>
           </a>
@@ -251,7 +251,7 @@ export default function App() {
         <div className="topbar">
           <div className="topbar-brand">
             <a href="#/" className="topbar-logo">
-              Chenji Learning Hub
+              沉积 Learning Hub
             </a>
           </div>
           <div className="topbar-right">

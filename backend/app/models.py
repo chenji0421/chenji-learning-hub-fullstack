@@ -4,7 +4,7 @@
 """
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Float, Integer, String, Text
 
 from app.database import Base
 
@@ -90,6 +90,68 @@ class NoteItem(Base):
     file_size = Column(Integer, default=0)  # 字节
     file_type = Column(String(20), default="pdf")
     tags = Column(JSON, default=list)  # 数组，如 ["高等数学", "极限"]
+    is_public = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class PlanTimeBlock(Base):
+    """阶段冲刺计划：每日时间段安排。
+
+    一天可以有多条时间段（早上 / 上午 / 下午 / 晚上…），用 sort_order 控制顺序。
+    访客只读公开数据；管理员登录后可以增删改。
+    """
+
+    __tablename__ = "plan_time_blocks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True, nullable=False)
+    time_range = Column(String(100), default="")  # 时间段，如 "08:00-09:00"
+    task = Column(String(500), default="")  # 要做什么
+    note = Column(String(500), default="")  # 重点 / 说明
+    category = Column(String(100), default="")  # 类型，如 学习 / 生活
+    sort_order = Column(Integer, default=0)
+    is_public = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class PlanCompletionRecord(Base):
+    """阶段冲刺计划：完成记录。
+
+    status 取值：完成 / 部分 / 未完成。完成度按真实记录计算，不做假统计。
+    """
+
+    __tablename__ = "plan_completion_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True, nullable=False)
+    time_range = Column(String(100), default="")
+    planned_task = Column(String(500), default="")  # 计划做什么
+    actual_done = Column(String(500), default="")  # 实际做了什么
+    status = Column(String(20), default="未完成")  # 完成 / 部分 / 未完成
+    note = Column(String(500), default="")
+    sort_order = Column(Integer, default=0)
+    is_public = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class SleepRecord(Base):
+    """阶段冲刺计划：睡眠记录。
+
+    一天一条，按入睡日期 date 记录入睡 / 起床时间和睡眠时长，不做假数据。
+    """
+
+    __tablename__ = "sleep_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True, nullable=False)  # 入睡日期
+    sleep_time = Column(String(50), default="")  # 入睡时间，如 "23:30"
+    wake_time = Column(String(50), default="")  # 起床时间，如 "07:00"
+    duration_hours = Column(Float, default=0.0)  # 睡眠时长（小时）
+    quality = Column(String(100), default="")  # 睡眠质量 / 备注
+    note = Column(String(500), default="")
     is_public = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

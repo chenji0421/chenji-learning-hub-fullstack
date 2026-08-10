@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
-import SprintTimeBlocks from "../components/sprint/SprintTimeBlocks.jsx";
-import SprintCompletions from "../components/sprint/SprintCompletions.jsx";
-import SprintSleep from "../components/sprint/SprintSleep.jsx";
 
 // 计划状态 → CSS 类（与 Admin 后台一致）：未开始灰 / 进行中蓝 / 已完成绿 / 暂停橙
 const STATUS_ORDER = ["未开始", "进行中", "已完成", "暂停"];
@@ -85,24 +82,6 @@ const todayStr = () => {
 };
 const nowMonth = () => todayStr().slice(0, 7);
 
-// 阶段冲刺计划标签页：概览（原公开计划）+ 三个真实记录模块 + 其他模块（暂未接入）
-const SPRINT_TABS = [
-  { key: "overview", label: "概览", sub: "公开计划" },
-  { key: "time", label: "时间安排", sub: "每天做什么" },
-  { key: "completion", label: "完成度", sub: "做了什么" },
-  { key: "sleep", label: "睡眠", sub: "作息记录" },
-  { key: "more", label: "其他模块", sub: "课程 / 应用 / 记账 / 饮食 / 身体" },
-];
-
-// 暂未接入的模块占位（不生成假数据、不放假表格）
-const MORE_MODULES = [
-  { key: "courses", icon: "📖", title: "课程" },
-  { key: "apps", icon: "📱", title: "应用" },
-  { key: "expenses", icon: "💰", title: "记账" },
-  { key: "diet", icon: "🍱", title: "饮食" },
-  { key: "body", icon: "⚖️", title: "身体" },
-];
-
 // 说明：计划模型没有 category 字段，不做「假分类统计」——分类筛选已移除，
 // 只保留真实的状态筛选与关键词搜索（数据全部来自后端数据库）。
 
@@ -131,7 +110,6 @@ function parseHashPath(hashPath) {
 
 export default function Plans({ user, hashPath }) {
   const location = useMemo(() => parseHashPath(hashPath), [hashPath]);
-  const [sprintTab, setSprintTab] = useState("overview"); // 阶段冲刺计划标签页
   const [plans, setPlans] = useState(null);
   const [error, setError] = useState("");
   const [monthKey, setMonthKey] = useState(nowMonth());
@@ -251,58 +229,21 @@ export default function Plans({ user, hashPath }) {
   };
 
   if (error) return <div className="error-box">加载失败：{error}</div>;
-  if (plans === null && sprintTab === "overview") {
-    return <div className="loading">加载中…</div>;
-  }
+  if (plans === null) return <div className="loading">加载中…</div>;
 
-  // ---------- 顶部 Hero（阶段冲刺计划） ----------
+  // ---------- 顶部说明区 ----------
   const header = (
-    <section className="sprint-hero">
-      <span className="sprint-kicker">Learning Sprint</span>
-      <h1 className="sprint-hero-title">沉积的阶段冲刺计划</h1>
-      <p className="sprint-hero-subtitle">浙江大学 25 级本科生 · 准大二 · 阶段学习计划 + 规律生活记录</p>
-      <p className="sprint-hero-desc">
-        这里记录学习安排、完成情况、课程推进、手机使用、记账、饮食、身体和睡眠。
-        访客可以查看，管理员登录后可以编辑保存。
-      </p>
-      <div className="sprint-hero-actions">
-        {isAdmin ? (
-          <span className="sprint-mode-chip edit">✍️ 当前是编辑模式</span>
-        ) : (
-          <a href="#/login" className="btn btn-primary">
-            登录管理员后可编辑保存
-          </a>
-        )}
+    <section className="plan-header">
+      <div className="plan-header-head">
+        <h1>📅 沉积的学习计划中心</h1>
+        <p>这里记录公开学习计划、每日安排和阶段复盘。访客可以查看，管理员登录后可以编辑。</p>
+      </div>
+      <div className={`plan-mode-banner ${isAdmin ? "edit" : "view"}`}>
+        {isAdmin
+          ? "✍️ 当前是编辑模式，修改会保存到服务器数据库。"
+          : "👀 当前是查看模式，只有管理员可以编辑计划。"}
       </div>
     </section>
-  );
-
-  // ---------- 模式提示条 ----------
-  const modeBanner = (
-    <div className={`plan-mode-banner ${isAdmin ? "edit" : "view"}`}>
-      {isAdmin
-        ? "✍️ 当前是编辑模式，修改会保存到服务器数据库。"
-        : "👀 当前是查看模式。登录管理员账号后，修改会自动保存到后端数据库，并同步到不同设备。"}
-    </div>
-  );
-
-  // ---------- 标签页导航 ----------
-  const sprintTabs = (
-    <div className="sprint-tabs" role="tablist" aria-label="阶段冲刺计划">
-      {SPRINT_TABS.map((t) => (
-        <button
-          key={t.key}
-          type="button"
-          role="tab"
-          aria-selected={sprintTab === t.key}
-          className={`sprint-tab${sprintTab === t.key ? " active" : ""}`}
-          onClick={() => setSprintTab(t.key)}
-        >
-          <span className="sprint-tab-label">{t.label}</span>
-          <span className="sprint-tab-sub">{t.sub}</span>
-        </button>
-      ))}
-    </div>
   );
 
   const renderStats = () => {
@@ -382,7 +323,7 @@ export default function Plans({ user, hashPath }) {
     );
   };
 
-  // ---------- 视图切换（概览内部） ----------
+  // ---------- 视图切换 ----------
   const viewSwitch = (
     <div className="plan-view-switch" role="tablist" aria-label="计划视图">
       {[
@@ -800,52 +741,14 @@ export default function Plans({ user, hashPath }) {
   return (
     <div className="plans">
       {header}
-      {modeBanner}
-      {sprintTabs}
-      {message && !editing && sprintTab === "overview" && (
-        <div className={`toast toast-${message.type}`}>{message.text}</div>
-      )}
-
-      {sprintTab === "overview" && (
-        <>
-          {renderStats()}
-          {viewSwitch}
-          {editForm}
-          {location.view === "month" && renderMonth()}
-          {location.view === "list" && renderList()}
-          {location.view === "today" && renderToday()}
-          {location.view === "day" && renderDay()}
-        </>
-      )}
-
-      {sprintTab === "time" && <SprintTimeBlocks isAdmin={isAdmin} />}
-
-      {sprintTab === "completion" && <SprintCompletions isAdmin={isAdmin} />}
-
-      {sprintTab === "sleep" && <SprintSleep isAdmin={isAdmin} />}
-
-      {sprintTab === "more" && (
-        <section className="sprint-section">
-          <div className="sprint-section-head">
-            <div>
-              <h2>🧩 更多模块</h2>
-              <p className="muted">课程 / 应用 / 记账 / 饮食 / 身体</p>
-            </div>
-          </div>
-          <div className="sprint-more-grid">
-            {MORE_MODULES.map((m) => (
-              <div key={m.key} className="sprint-more-card">
-                <h3>
-                  {m.icon} {m.title}
-                </h3>
-                <p className="muted">
-                  该模块暂未接入真实数据。后续会支持管理员新增和保存记录，当前不会显示假数据。
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {renderStats()}
+      {message && !editing && <div className={`toast toast-${message.type}`}>{message.text}</div>}
+      {viewSwitch}
+      {editForm}
+      {location.view === "month" && renderMonth()}
+      {location.view === "list" && renderList()}
+      {location.view === "today" && renderToday()}
+      {location.view === "day" && renderDay()}
     </div>
   );
 }

@@ -88,32 +88,6 @@ export const api = {
     request(`/api/admin/plans/${date}`, { method: "PUT", body: JSON.stringify(payload) }),
   deletePlan: (date) => request(`/api/admin/plans/${date}`, { method: "DELETE" }),
 
-  // 阶段冲刺计划（访客只读公开数据；写操作在 /api/admin/sprint，按 id 定位，需管理员）
-  listTimeBlocks: (date) =>
-    request(date ? `/api/sprint/time-blocks?date=${date}` : "/api/sprint/time-blocks"),
-  createTimeBlock: (payload) =>
-    request("/api/admin/sprint/time-blocks", { method: "POST", body: JSON.stringify(payload) }),
-  updateTimeBlock: (id, payload) =>
-    request(`/api/admin/sprint/time-blocks/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
-  deleteTimeBlock: (id) =>
-    request(`/api/admin/sprint/time-blocks/${id}`, { method: "DELETE" }),
-  listCompletions: (date) =>
-    request(date ? `/api/sprint/completions?date=${date}` : "/api/sprint/completions"),
-  createCompletion: (payload) =>
-    request("/api/admin/sprint/completions", { method: "POST", body: JSON.stringify(payload) }),
-  updateCompletion: (id, payload) =>
-    request(`/api/admin/sprint/completions/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
-  deleteCompletion: (id) =>
-    request(`/api/admin/sprint/completions/${id}`, { method: "DELETE" }),
-  listSleep: (date) =>
-    request(date ? `/api/sprint/sleep?date=${date}` : "/api/sprint/sleep"),
-  createSleep: (payload) =>
-    request("/api/admin/sprint/sleep", { method: "POST", body: JSON.stringify(payload) }),
-  updateSleep: (id, payload) =>
-    request(`/api/admin/sprint/sleep/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
-  deleteSleep: (id) =>
-    request(`/api/admin/sprint/sleep/${id}`, { method: "DELETE" }),
-
   // 学习笔记（访客只读公开；写操作在 /api/admin/notes，需管理员）
   listNoteSections: () => request("/api/notes/sections"),
   listNoteItems: (sectionId) =>

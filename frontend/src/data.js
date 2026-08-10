@@ -42,6 +42,27 @@ export const TOOLBOX_GROUPS = [
     ],
   },
   {
+    title: "AI 与常用网站",
+    icon: "🌐",
+    desc: "这里放一些我平时最常打开的网站入口，方便从沉积 Learning Hub 直接跳转。",
+    cards: [
+      {
+        name: "🤖 ChatGPT",
+        what: "和 AI 对话、查资料、整理思路、辅助学习和写代码。",
+        when: "遇到问题时，可以用它解释概念、生成思路、检查代码和整理学习计划。",
+        action: "打开 ChatGPT",
+        url: "https://chatgpt.com",
+      },
+      {
+        name: "📺 哔哩哔哩 / B站",
+        what: "看学习视频、公开课、技术教程，也可以适当放松。",
+        when: "查找课程讲解、编程教程、软件使用教程、英语学习视频等。",
+        action: "打开 B站",
+        url: "https://www.bilibili.com",
+      },
+    ],
+  },
+  {
     title: "内容维护",
     icon: "✍️",
     desc: "日常更新网站内容最常见的四件事，都从管理后台进。",

@@ -185,19 +185,6 @@ class NoteItemRead(NoteItemBase):
         return _utc_aware(dt)
 
 
-# ---------------- 认证 / 用户 ----------------
-class UserRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    github_id: int
-    username: str
-    name: str
-    avatar_url: str
-    role: str = "reader"  # admin / reader
-    is_admin: bool = False
-
-
 class LoginResponse(BaseModel):
     authorize_url: str
 

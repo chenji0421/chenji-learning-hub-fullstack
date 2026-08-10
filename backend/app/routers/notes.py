@@ -16,7 +16,6 @@
 - POST /api/admin/notes/items/{id}/upload            给已有笔记上传 / 替换 PDF
 - POST /api/admin/notes/items/upload                 新建笔记 + 上传 PDF（multipart）
 """
-import shutil
 from pathlib import Path
 from uuid import uuid4
 
@@ -39,6 +38,9 @@ from app.schemas import (
 
 router = APIRouter(prefix="/api", tags=["notes"])
 
+# PDF 上传大小上限：50MB
+MAX_PDF_SIZE = 50 * 1024 * 1024
+
 
 def _is_admin(user: User | None) -> bool:
     """带 token 且是配置的管理员才返回 True。"""
@@ -55,18 +57,34 @@ def _delete_item_file(item: NoteItem) -> None:
 
 
 def _save_upload(item: NoteItem, file: UploadFile, db: Session) -> NoteItem:
-    """把上传的 PDF 保存到上传目录，并更新笔记的文件字段。"""
+    """把上传的 PDF 分块保存到上传目录，超过大小限制则拒绝并清理临时文件。
+
+    新文件完整写入成功后才删除旧文件，避免上传失败把原文件也弄丢。
+    """
     NOTES_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    # 替换旧文件时先删旧的
-    _delete_item_file(item)
     # 用「笔记 id + 随机串」命名，避免原始文件名冲突 / 路径穿越
     safe_name = f"{item.id}_{uuid4().hex[:8]}.pdf"
     dest = NOTES_UPLOAD_DIR / safe_name
-    with open(dest, "wb") as out:
-        shutil.copyfileobj(file.file, out)
+    written = 0
+    try:
+        with open(dest, "wb") as out:
+            while True:
+                chunk = file.file.read(1024 * 1024)  # 1MB 分块，避免一次性读入内存
+                if not chunk:
+                    break
+                written += len(chunk)
+                if written > MAX_PDF_SIZE:
+                    raise HTTPException(status_code=413, detail="PDF 文件不能超过 50MB")
+                out.write(chunk)
+    except (HTTPException, OSError):
+        # 超过限制或写入出错时，删除已写入的临时文件
+        dest.unlink(missing_ok=True)
+        raise
+    # 新文件完整写入成功后才删除旧文件
+    _delete_item_file(item)
     item.file_name = file.filename or ""
     item.file_path = str(dest)
-    item.file_size = dest.stat().st_size
+    item.file_size = written
     item.file_type = "pdf"
     db.commit()
     db.refresh(item)
@@ -263,10 +281,17 @@ def delete_note_item(
 
 # ==================== PDF 上传 ====================
 def _validate_pdf(file: UploadFile) -> None:
-    """只允许上传 PDF 文件。"""
+    """校验扩展名、MIME 类型和文件头魔数，确认是真正的 PDF 文件。"""
     name = (file.filename or "").lower()
     if not name.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="只支持上传 PDF 文件")
+        raise HTTPException(status_code=400, detail="只允许上传 PDF 文件")
+    if (file.content_type or "").lower() != "application/pdf":
+        raise HTTPException(status_code=400, detail="只允许上传 PDF 文件")
+    # 读取文件头校验 %PDF- 魔数，读完要 seek 回开头，避免后续保存丢内容
+    head = file.file.read(5)
+    file.file.seek(0)
+    if not head.startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="只允许上传 PDF 文件")
 
 
 @router.post("/admin/notes/items/{item_id}/upload", response_model=NoteItemRead)
@@ -309,4 +334,10 @@ def upload_note_item(
     db.add(item)
     db.commit()
     db.refresh(item)
-    return _save_upload(item, file, db)
+    try:
+        return _save_upload(item, file, db)
+    except (HTTPException, OSError):
+        # 上传失败（超限等）时，删除刚创建但没配上文件的笔记，避免留下空条目
+        db.delete(item)
+        db.commit()
+        raise

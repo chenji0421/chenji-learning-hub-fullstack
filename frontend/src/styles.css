@@ -1879,37 +1879,43 @@ button.cal-cell {
    工具箱页
    ============================================================ */
 .toolbox {
-  max-width: 900px;
+  max-width: 960px;
 }
 
 .toolbox-group {
-  margin-bottom: var(--sp-6);
+  margin-bottom: var(--sp-8);
 }
 
 .toolbox-group h2 {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.02rem;
+  font-size: 1.05rem;
   padding-bottom: var(--sp-3);
   border-bottom: 1px solid var(--border);
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-2);
 }
 
 .toolbox-group-icon {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+}
+
+.toolbox-group-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0 0 var(--sp-4);
 }
 
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--sp-4);
 }
 
 .tool-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   padding: var(--sp-4) var(--sp-5);
   background: var(--card);
   border: 1px solid var(--border);
@@ -1920,11 +1926,17 @@ button.cal-cell {
   transition: all 0.18s ease;
 }
 
-.tool-card:hover {
+a.tool-card:hover {
   border-color: var(--primary-soft-border);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
-  color: var(--text);
+}
+
+.tool-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .tool-name {
@@ -1933,21 +1945,115 @@ button.cal-cell {
   color: var(--text);
 }
 
-.tool-card:hover .tool-name {
+a.tool-card:hover .tool-name {
   color: var(--primary);
 }
 
-.tool-desc {
-  font-size: 0.84rem;
+.tool-card-action {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-soft-border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.tool-card-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.83rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.tool-card-row b {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* 可展开的说明卡（故障排查 / 更新首页介绍） */
+details.tool-card {
+  cursor: pointer;
+}
+
+details.tool-card summary {
+  list-style: none;
+  display: block;
+  cursor: pointer;
+}
+
+details.tool-card summary::-webkit-details-marker {
+  display: none;
+}
+
+details.tool-card:hover,
+details.tool-card[open] {
+  border-color: var(--primary-soft-border);
+  box-shadow: var(--shadow-md);
+}
+
+.tool-card-detail {
+  display: block;
+  margin-top: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-soft-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.83rem;
+  line-height: 1.65;
+}
+
+/* 命令块 */
+.tool-command-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--sp-4);
+}
+
+.tool-command {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-4) var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.tool-command-title {
+  font-weight: 650;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.tool-command-code {
+  background: #1f2328;
+  color: #e6edf3;
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.tool-command-code code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.tool-command-note {
+  font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.5;
-}
-
-.tool-open {
-  font-size: 0.78rem;
-  color: var(--primary);
-  opacity: 0.8;
-  margin-top: 2px;
 }
 
 .toolbox-note {

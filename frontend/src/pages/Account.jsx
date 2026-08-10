@@ -40,6 +40,9 @@ export default function Account({ user, onLogout }) {
             )}
             <span className="muted"> · GitHub OAuth 登录</span>
           </div>
+          {!user.is_admin && (
+            <p className="account-no-admin">暂无管理权限。只有 <code>chenji0421</code> 可以进入管理后台。</p>
+          )}
         </div>
       </div>
 

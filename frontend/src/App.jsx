@@ -5,11 +5,13 @@ import Articles from "./pages/Articles.jsx";
 import ArticleDetail from "./pages/ArticleDetail.jsx";
 import Notes from "./pages/Notes.jsx";
 import Plans from "./pages/Plans.jsx";
+import Music from "./pages/Music.jsx";
 import Toolbox from "./pages/Toolbox.jsx";
 import Game from "./pages/Game.jsx";
 import Account from "./pages/Account.jsx";
 import Login from "./pages/Login.jsx";
 import Admin from "./pages/Admin.jsx";
+import MiniPlayer from "./components/MiniPlayer.jsx";
 
 const THEME_KEY = "chl_theme";
 const COLLAPSE_KEY = "chl_sidebar_collapsed";
@@ -102,6 +104,8 @@ export default function App() {
   } else if (route === "plans" || route.startsWith("plans/")) {
     // #/plans 年表 · #/plans/YYYY 年份 · #/plans/YYYY-MM 月表 · #/plans/YYYY-MM-DD 日计划
     page = <Plans user={user} hashPath={route} />;
+  } else if (route === "music") {
+    page = <Music />;
   } else if (route === "toolbox") {
     page = <Toolbox />;
   } else if (route === "game") {
@@ -120,8 +124,8 @@ export default function App() {
   const isActive = (key) => {
     if (key === "") return route === "" || route === "home";
     if (key === "articles") return route === "articles" || route.startsWith("articles/");
-    if (key === "notes") return route === "notes";
     if (key === "plans") return route === "plans" || route.startsWith("plans/");
+    if (key === "music") return route === "music";
     if (key === "toolbox") return route === "toolbox";
     if (key === "game") return route === "game";
     if (key === "account") return route === "account";
@@ -130,24 +134,21 @@ export default function App() {
     return false;
   };
 
-  // 导航：访客可浏览的公共页面 + 登录 / 账号 / 管理
+  // 主导航：首页 / 文章 / 计划 / 音乐 / 工具箱 / 游戏
+  // 登录后追加 账号 / 管理；未登录显示 登录
   const publicItems = [
     { key: "", icon: "🏠", label: "首页" },
     { key: "articles", icon: "📝", label: "文章" },
-    { key: "notes", icon: "🗂️", label: "技术笔记" },
     { key: "plans", icon: "🗓️", label: "计划" },
+    { key: "music", icon: "🎵", label: "音乐" },
     { key: "toolbox", icon: "🧰", label: "工具箱" },
     { key: "game", icon: "🎮", label: "游戏" },
   ];
-  const userItems = [
-    { key: "account", icon: "👤", label: "账号" },
-  ];
+  const userItems = [{ key: "account", icon: "👤", label: "账号" }];
   const authItems = user
     ? [
         ...userItems,
-        ...(user.is_admin
-          ? [{ key: "admin", icon: "⚙️", label: "管理" }]
-          : []),
+        ...(user.is_admin ? [{ key: "admin", icon: "⚙️", label: "管理" }] : []),
       ]
     : [{ key: "login", icon: "🔑", label: "登录" }];
   const navItems = [...publicItems, ...authItems];
@@ -157,10 +158,10 @@ export default function App() {
       <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
         <div className="sidebar-head">
           <a href="#/" className="logo" title="Chenji Learning Hub">
-            <span className="logo-mark">📚</span>
+            <span className="logo-mark">C</span>
             <span className="logo-text">
-              <span className="logo-title">Chenji Learning Hub</span>
-              <span className="logo-sub">记录学习 · 项目 · 计划</span>
+              <span className="logo-title">Chenji</span>
+              <span className="logo-sub">chenji0421</span>
             </span>
           </a>
           <button
@@ -196,8 +197,8 @@ export default function App() {
                 <img
                   src={user.avatar_url}
                   alt=""
-                  width="32"
-                  height="32"
+                  width="34"
+                  height="34"
                   className="avatar"
                   title={user.username}
                 />
@@ -208,7 +209,7 @@ export default function App() {
                   {user.is_admin ? (
                     <span className="role-badge">管理员</span>
                   ) : (
-                    <span className="sidebar-user-role">访客</span>
+                    <span className="sidebar-user-role">读者</span>
                   )}
                 </div>
                 <button
@@ -222,37 +223,70 @@ export default function App() {
               </>
             ) : (
               <>
-                <span className="avatar" style={{ width: 32, height: 32 }} />
+                <span className="avatar avatar-placeholder" aria-hidden="true">
+                  👤
+                </span>
                 <div className="sidebar-user-info">
-                  <span className="sidebar-user-name">访客</span>
-                  <span className="sidebar-user-role">未登录</span>
+                  <span className="sidebar-user-name">未登录</span>
+                  <span className="sidebar-user-role">点击账号页登录</span>
                 </div>
-                <a href="#/login" className="nav-logout" title="去登录">
-                  去登录
+                <a href="#/account" className="nav-logout" title="去账号页">
+                  登录
                 </a>
               </>
             )}
           </div>
+
+          <MiniPlayer />
+
           <div className="sidebar-tools">
+            <div className="site-footer">FastAPI + React · chenji0421</div>
+          </div>
+        </div>
+      </aside>
+
+      <main className="main-area">
+        {/* 顶部操作区：主题切换 + 在线工作台 + 当前用户 */}
+        <div className="topbar">
+          <div className="topbar-brand">
+            <a href="#/" className="topbar-logo">
+              Chenji Learning Hub
+            </a>
+          </div>
+          <div className="topbar-right">
+            {user && (
+              <a className="topbar-user" href="#/account" title={user.username}>
+                <img
+                  src={user.avatar_url}
+                  alt=""
+                  width="24"
+                  height="24"
+                  className="avatar"
+                />
+                <span className="topbar-username">
+                  {user.username}
+                  {user.is_admin ? " · 管理员" : ""}
+                </span>
+              </a>
+            )}
+            <a className="btn btn-sm topbar-online" href="#/admin" title="进入管理后台">
+              <span className="topbar-online-dot" />
+              在线工作台
+            </a>
             <button
               type="button"
-              className="theme-toggle"
+              className="icon-btn topbar-theme"
               onClick={toggleTheme}
               title={theme === "dark" ? "切换到浅色模式" : "切换到深色模式"}
               aria-label={theme === "dark" ? "切换到浅色模式" : "切换到深色模式"}
             >
               {theme === "dark" ? "☀️" : "🌙"}
-              <span className="theme-label">
-                {theme === "dark" ? "浅色模式" : "深色模式"}
-              </span>
             </button>
-            <div className="site-footer">
-              FastAPI + React · chenji0421
-            </div>
           </div>
         </div>
-      </aside>
-      <main className="main-area">{page}</main>
+
+        <div className="page-content">{page}</div>
+      </main>
     </div>
   );
 }

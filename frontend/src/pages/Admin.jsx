@@ -23,7 +23,8 @@ const EMPTY_PLAN = {
 };
 
 // 计划月历用的小工具（与 Plans.jsx 保持一致的配色约定）
-const STATUS_CLASS = { 进行中: "pending", 已完成: "done", 未开始: "todo" };
+const STATUS_CLASS = { 未开始: "todo", 进行中: "pending", 已完成: "done", 暂停: "paused" };
+const STATUS_ORDER = ["未开始", "进行中", "已完成", "暂停"];
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -255,7 +256,10 @@ export default function Admin({ user }) {
     setEditingPlan(null);
     setPlanForm({ ...EMPTY_PLAN, date });
     setTab("plans");
-    document.getElementById("admin-plan-form")?.scrollIntoView({ behavior: "smooth" });
+    // 等 plans 标签页渲染出来再滚动到表单
+    setTimeout(() => {
+      document.getElementById("admin-plan-form")?.scrollIntoView({ behavior: "smooth" });
+    }, 60);
   };
 
   // ---------- 统计与计划月历 ----------
@@ -637,46 +641,50 @@ export default function Admin({ user }) {
                     />
                   </div>
                   <div className="form-group">
-                    <label>状态</label>
-                    <select
-                      value={planForm.status}
-                      onChange={(e) => setPlanForm({ ...planForm, status: e.target.value })}
-                    >
-                      <option>进行中</option>
-                      <option>已完成</option>
-                      <option>未开始</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>目标</label>
+                    <label>今日目标</label>
                     <input
                       value={planForm.goal}
                       onChange={(e) => setPlanForm({ ...planForm, goal: e.target.value })}
                     />
                   </div>
-                  <div className="form-group">
-                    <label>上午</label>
-                    <input
-                      value={planForm.morning}
-                      onChange={(e) => setPlanForm({ ...planForm, morning: e.target.value })}
-                    />
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label>上午</label>
+                      <input
+                        value={planForm.morning}
+                        onChange={(e) => setPlanForm({ ...planForm, morning: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>下午</label>
+                      <input
+                        value={planForm.afternoon}
+                        onChange={(e) => setPlanForm({ ...planForm, afternoon: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label>晚上</label>
+                      <input
+                        value={planForm.evening}
+                        onChange={(e) => setPlanForm({ ...planForm, evening: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>状态</label>
+                      <select
+                        value={planForm.status}
+                        onChange={(e) => setPlanForm({ ...planForm, status: e.target.value })}
+                      >
+                        {STATUS_ORDER.map((s) => (
+                          <option key={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label>下午</label>
-                    <input
-                      value={planForm.afternoon}
-                      onChange={(e) => setPlanForm({ ...planForm, afternoon: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>晚上</label>
-                    <input
-                      value={planForm.evening}
-                      onChange={(e) => setPlanForm({ ...planForm, evening: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>复盘（完成后填写）</label>
+                    <label>今日复盘（完成后填写）</label>
                     <textarea
                       rows="3"
                       value={planForm.review}
@@ -706,6 +714,12 @@ export default function Admin({ user }) {
                       <li key={p.id}>
                         <span>
                           {p.date} · {p.title}
+                          <span
+                            className={`status ${STATUS_CLASS[p.status] || "pending"}`}
+                            style={{ marginLeft: 8 }}
+                          >
+                            {p.status}
+                          </span>
                         </span>
                         <span className="admin-actions">
                           <button onClick={() => editPlan(p)}>编辑</button>

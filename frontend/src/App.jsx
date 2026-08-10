@@ -102,7 +102,8 @@ export default function App() {
   } else if (route === "notes") {
     page = <Notes />;
   } else if (route === "plans" || route.startsWith("plans/")) {
-    // #/plans 年表 · #/plans/YYYY 年份 · #/plans/YYYY-MM 月表 · #/plans/YYYY-MM-DD 日计划
+    // #/plans 月视图 · #/plans/list 列表视图 · #/plans/today 今日计划
+    // 深链：#/plans/month/YYYY-MM · #/plans/day/YYYY-MM-DD
     page = <Plans user={user} hashPath={route} />;
   } else if (route === "music") {
     page = <Music />;

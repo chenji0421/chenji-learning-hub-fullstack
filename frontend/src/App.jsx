@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { api, getToken, setToken } from "./api.js";
 import Home from "./pages/Home.jsx";
+import About from "./pages/About.jsx";
 import Articles from "./pages/Articles.jsx";
 import ArticleDetail from "./pages/ArticleDetail.jsx";
 import Notes from "./pages/Notes.jsx";
+import Friends from "./pages/Friends.jsx";
 import Plans from "./pages/Plans.jsx";
 import Music from "./pages/Music.jsx";
 import Toolbox from "./pages/Toolbox.jsx";
@@ -100,8 +102,12 @@ export default function App() {
     page = <ArticleDetail id={route.split("/")[1]} />;
   } else if (route === "articles") {
     page = <Articles />;
+  } else if (route === "about") {
+    page = <About />;
   } else if (route === "notes") {
-    page = <Notes />;
+    page = <Notes user={user} />;
+  } else if (route === "friends") {
+    page = <Friends />;
   } else if (route === "plans" || route.startsWith("plans/")) {
     // #/plans 月视图 · #/plans/list 列表视图 · #/plans/today 今日计划
     // 深链：#/plans/month/YYYY-MM · #/plans/day/YYYY-MM-DD
@@ -128,6 +134,9 @@ export default function App() {
   const isActive = (key) => {
     if (key === "") return route === "" || route === "home";
     if (key === "articles") return route === "articles" || route.startsWith("articles/");
+    if (key === "about") return route === "about";
+    if (key === "notes") return route === "notes";
+    if (key === "friends") return route === "friends";
     if (key === "plans") return route === "plans" || route.startsWith("plans/");
     if (key === "music") return route === "music";
     if (key === "toolbox") return route === "toolbox";
@@ -139,16 +148,19 @@ export default function App() {
     return false;
   };
 
-  // 主导航：首页 / 文章 / 计划 / 音乐 / 工具箱 / 游戏
+  // 主导航：首页 / 关于我 / 文章 / 学习笔记 / 计划 / 工具箱 / 音乐 / 游戏 / 友人 / 更新日志
   // 登录后追加 账号 / 管理；未登录显示 登录
   const publicItems = [
     { key: "", icon: "🏠", label: "首页" },
+    { key: "about", icon: "🙋", label: "关于我" },
     { key: "articles", icon: "📝", label: "文章" },
+    { key: "notes", icon: "📚", label: "学习笔记" },
     { key: "plans", icon: "🗓️", label: "计划" },
-    { key: "music", icon: "🎵", label: "音乐" },
     { key: "toolbox", icon: "🧰", label: "工具箱" },
-    { key: "changelog", icon: "📜", label: "更新日志" },
+    { key: "music", icon: "🎵", label: "音乐" },
     { key: "game", icon: "🎮", label: "游戏" },
+    { key: "friends", icon: "🤝", label: "友人" },
+    { key: "changelog", icon: "📜", label: "更新日志" },
   ];
   const userItems = [{ key: "account", icon: "👤", label: "账号" }];
   const authItems = user

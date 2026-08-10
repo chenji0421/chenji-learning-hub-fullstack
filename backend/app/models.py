@@ -4,7 +4,7 @@
 """
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Column, Date, DateTime, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Integer, String, Text
 
 from app.database import Base
 
@@ -59,3 +59,37 @@ class User(Base):
     name = Column(String(200), default="")
     avatar_url = Column(String(500), default="")
     created_at = Column(DateTime, default=utcnow)
+
+
+class NoteSection(Base):
+    """学习笔记分区。parent_id 为空表示大分区，非空表示挂在某大分区下的子分区。"""
+
+    __tablename__ = "note_sections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    description = Column(String(500), default="")
+    parent_id = Column(Integer, nullable=True, index=True)  # 父分区 id，null = 大分区
+    sort_order = Column(Integer, default=0)
+    is_public = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class NoteItem(Base):
+    """学习笔记条目，一般对应一个 PDF 文件。"""
+
+    __tablename__ = "note_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(String(500), default="")
+    section_id = Column(Integer, nullable=False, index=True)
+    file_name = Column(String(255), default="")  # 原始文件名（展示用）
+    file_path = Column(String(500), default="")  # 服务端存储路径（不对外暴露）
+    file_size = Column(Integer, default=0)  # 字节
+    file_type = Column(String(20), default="pdf")
+    tags = Column(JSON, default=list)  # 数组，如 ["高等数学", "极限"]
+    is_public = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

@@ -39,6 +39,22 @@ export const TOOLBOX_GROUPS = [
         action: "查看部署",
         url: "https://github.com/chenji0421/chenji-learning-hub-fullstack/actions",
       },
+      {
+        name: "学习笔记库",
+        what: "按分区和课程整理 iPad 手写 PDF 学习笔记的地方。",
+        when: "想查之前整理的课程笔记、找某份 PDF 笔记时。",
+        action: "打开笔记库",
+        url: "#/notes",
+        internal: true,
+      },
+      {
+        name: "友人链接",
+        what: "朋友网站和常访问的个人站点入口。",
+        when: "想看看认识的人的网站、参考别人的工作台时。",
+        action: "打开友链",
+        url: "#/friends",
+        internal: true,
+      },
     ],
   },
   {

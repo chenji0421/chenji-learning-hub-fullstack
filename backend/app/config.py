@@ -43,5 +43,14 @@ class Settings(BaseSettings):
     # SQLite 数据库文件路径
     database_url: str = "sqlite:///./chenji_hub.db"
 
+    # 数据目录（学习笔记 PDF 等上传文件）。本地默认 backend/data，
+    # Docker 部署时通过 DATA_DIR=/app/data 指向已挂载的 volume
+    data_dir: str = ""
+
 
 settings = Settings()
+
+# 上传数据目录：Docker 部署时 DATA_DIR 指向挂载的 /app/data，本地默认 backend/data
+DATA_DIR = Path(settings.data_dir) if settings.data_dir else PROJECT_ROOT / "backend" / "data"
+# 学习笔记 PDF 上传目录
+NOTES_UPLOAD_DIR = DATA_DIR / "uploads" / "notes"

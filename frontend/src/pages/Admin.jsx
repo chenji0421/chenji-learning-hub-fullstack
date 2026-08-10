@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, getToken } from "../api.js";
 import renderMarkdown from "../markdown.jsx";
 import { changelog } from "../data/changelog.js";
+import NotesAdmin from "../components/NotesAdmin.jsx";
 
 // tags 在表单里用逗号分隔的字符串编辑，提交时拆成数组
 const EMPTY_ARTICLE = {
@@ -48,6 +49,7 @@ const ADMIN_TABS = [
   { key: "overview", icon: "📊", label: "总览" },
   { key: "editor", icon: "✍️", label: "写文章" },
   { key: "library", icon: "🗃️", label: "内容库" },
+  { key: "notes", icon: "📚", label: "学习笔记" },
   { key: "plans", icon: "🗓️", label: "计划管理" },
   { key: "ops", icon: "🛠️", label: "运维状态" },
 ];
@@ -782,6 +784,9 @@ export default function Admin({ user }) {
           </div>
         </section>
       )}
+
+      {/* ============ 学习笔记 ============ */}
+      {tab === "notes" && <NotesAdmin />}
 
       {/* ============ 运维状态 ============ */}
       {tab === "ops" && (

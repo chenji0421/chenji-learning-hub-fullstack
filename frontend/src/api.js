@@ -36,6 +36,28 @@ async function request(path, options = {}) {
   return data;
 }
 
+// multipart 上传专用：不手动设 Content-Type，让浏览器自动带 boundary
+async function requestForm(path, { method = "POST", body } = {}) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { method, body, headers });
+
+  if (res.status === 204) return null;
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const detail = data?.detail;
+    const msg =
+      typeof detail === "string" ? detail : detail?.[0]?.msg || `请求失败（${res.status}）`;
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
 export const api = {
   // 健康检查
   health: () => request("/api/health"),
@@ -65,4 +87,39 @@ export const api = {
   updatePlan: (date, payload) =>
     request(`/api/admin/plans/${date}`, { method: "PUT", body: JSON.stringify(payload) }),
   deletePlan: (date) => request(`/api/admin/plans/${date}`, { method: "DELETE" }),
+
+  // 学习笔记（访客只读公开；写操作在 /api/admin/notes，需管理员）
+  listNoteSections: () => request("/api/notes/sections"),
+  listNoteItems: (sectionId) =>
+    request(sectionId ? `/api/notes/items?section_id=${sectionId}` : "/api/notes/items"),
+  getNoteItem: (id) => request(`/api/notes/items/${id}`),
+  // PDF 文件地址（新标签页打开或下载）
+  noteFileUrl: (id) => `${API_BASE}/api/notes/items/${id}/file`,
+  // 分区管理（管理员）
+  createNoteSection: (payload) =>
+    request("/api/admin/notes/sections", { method: "POST", body: JSON.stringify(payload) }),
+  updateNoteSection: (id, payload) =>
+    request(`/api/admin/notes/sections/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteNoteSection: (id) =>
+    request(`/api/admin/notes/sections/${id}`, { method: "DELETE" }),
+  // 笔记管理（管理员）
+  createNoteItem: (payload) =>
+    request("/api/admin/notes/items", { method: "POST", body: JSON.stringify(payload) }),
+  updateNoteItem: (id, payload) =>
+    request(`/api/admin/notes/items/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteNoteItem: (id) =>
+    request(`/api/admin/notes/items/${id}`, { method: "DELETE" }),
+  // PDF 上传：创建笔记 + 上传文件一步完成
+  uploadNoteItem: (fields, file) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    if (file) fd.append("file", file);
+    return requestForm("/api/admin/notes/items/upload", { method: "POST", body: fd });
+  },
+  // 给已存在的笔记绑定 / 替换 PDF
+  uploadNoteFile: (id, file) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return requestForm(`/api/admin/notes/items/${id}/upload`, { method: "POST", body: fd });
+  },
 };

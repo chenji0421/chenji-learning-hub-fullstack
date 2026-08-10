@@ -3862,3 +3862,332 @@ details.tool-card[open] {
     gap: 8px;
   }
 }
+
+/* ============================================================
+   关于我 / 友人 / 学习笔记库 / 首页入口 新增模块样式
+   ============================================================ */
+
+/* ---------- 首页：认识这里入口卡片 ---------- */
+.entry-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-4);
+}
+
+.entry-card {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.entry-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--primary-soft-border);
+}
+
+.entry-card-icon {
+  font-size: 1.8rem;
+  display: block;
+  margin-bottom: var(--sp-3);
+}
+
+.entry-card h3 {
+  margin: 0 0 var(--sp-2);
+  font-size: 1.02rem;
+}
+
+.entry-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* ---------- 关于我 ---------- */
+.about-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.about-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.about-list li:last-child {
+  border-bottom: none;
+}
+
+.about-list .ops-label {
+  width: 88px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.about-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 0.96rem;
+}
+
+/* ---------- 友人 / 友链 ---------- */
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--sp-5);
+}
+
+.friend-card {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-6);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.friend-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--primary-soft-border);
+}
+
+.friend-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.friend-avatar {
+  font-size: 1.6rem;
+}
+
+.friend-name {
+  margin: 0;
+  font-size: 1.05rem;
+  flex: 1;
+}
+
+.friend-go {
+  font-size: 0.82rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.friend-desc {
+  margin: 0 0 var(--sp-3);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.friends-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.friends-tags .tag {
+  margin-right: 0;
+}
+
+/* ---------- 学习笔记库 ---------- */
+.notes-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+.notes-tree {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-4);
+  position: sticky;
+  top: 76px;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+}
+
+.notes-tree-branch {
+  display: flex;
+  flex-direction: column;
+}
+
+.notes-tree-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin: 1px 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.notes-tree-item:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.notes-tree-item.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.notes-tree-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notes-tree-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--bg-subtle);
+  border-radius: 999px;
+  padding: 0 8px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.notes-tree-item.active .notes-tree-count {
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.notes-main {
+  min-width: 0;
+}
+
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.note-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-5);
+  transition: box-shadow 0.2s ease;
+}
+
+.note-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.note-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.note-file-icon {
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.note-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.note-title {
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.note-private {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--warning);
+  background: var(--warning-soft);
+  border-radius: 6px;
+  padding: 1px 8px;
+}
+
+.note-file-name {
+  font-size: 0.8rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.note-desc {
+  margin: var(--sp-3) 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.note-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+
+/* ---------- 学习笔记管理后台 ---------- */
+.notes-admin .wb-grid {
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+
+/* ---------- 移动端适配 ---------- */
+@media (max-width: 860px) {
+  .notes-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .notes-tree {
+    position: static;
+    max-height: 300px;
+  }
+
+  .note-card-foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

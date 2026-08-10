@@ -7,12 +7,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
+from app.config import NOTES_UPLOAD_DIR, settings
 from app.database import Base, engine
-from app.routers import articles, auth, health, plans
+from app.routers import articles, auth, health, notes, plans
 
 # 第一版直接建表即可；内容变复杂后再引入 Alembic 做迁移
 Base.metadata.create_all(bind=engine)
+
+# 确保学习笔记 PDF 上传目录存在（本地 backend/data/uploads/notes，Docker 里是 /app/data/uploads/notes）
+NOTES_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
     title="Chenji Learning Hub API",
@@ -37,6 +40,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(articles.router)
 app.include_router(plans.router)
+app.include_router(notes.router)
 
 
 @app.get("/")

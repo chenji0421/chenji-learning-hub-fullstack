@@ -19,6 +19,12 @@ node_modules/
 dist/
 frontend/dist/
 
+# ---------- 上传数据（学习笔记 PDF 等） ----------
+# 上传的 PDF 保存在服务器数据目录，绝不提交到 GitHub
+backend/data/
+uploads/
+*.pdf
+
 # ---------- 编辑器 / 系统 ----------
 .vscode/
 .idea/

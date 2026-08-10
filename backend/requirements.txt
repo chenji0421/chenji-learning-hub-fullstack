@@ -11,6 +11,9 @@ psycopg2-binary>=2.9.9
 pydantic>=2.10.0
 pydantic-settings>=2.6.0
 
+# 文件上传（学习笔记 PDF 等 multipart 表单）
+python-multipart>=0.0.9
+
 # GitHub OAuth 请求
 httpx>=0.28.0
 

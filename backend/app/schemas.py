@@ -112,6 +112,92 @@ class UserRead(BaseModel):
     is_admin: bool = False
 
 
+# ---------------- 学习笔记 ----------------
+class NoteSectionBase(BaseModel):
+    name: str
+    description: str = ""
+    parent_id: int | None = None
+    sort_order: int = 0
+    is_public: bool = True
+
+
+class NoteSectionCreate(NoteSectionBase):
+    pass
+
+
+class NoteSectionUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    parent_id: int | None = None
+    sort_order: int | None = None
+    is_public: bool | None = None
+
+
+class NoteSectionRead(NoteSectionBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
+
+class NoteItemBase(BaseModel):
+    title: str
+    description: str = ""
+    section_id: int
+    file_name: str = ""
+    file_size: int = 0
+    file_type: str = "pdf"
+    tags: list[str] = []
+    is_public: bool = True
+
+
+class NoteItemCreate(NoteItemBase):
+    pass
+
+
+class NoteItemUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    section_id: int | None = None
+    file_name: str | None = None
+    file_size: int | None = None
+    file_type: str | None = None
+    tags: list[str] | None = None
+    is_public: bool | None = None
+
+
+class NoteItemRead(NoteItemBase):
+    """不含 file_path——服务器内部路径不对前端暴露。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
+
+# ---------------- 认证 / 用户 ----------------
+class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    github_id: int
+    username: str
+    name: str
+    avatar_url: str
+    role: str = "reader"  # admin / reader
+    is_admin: bool = False
+
+
 class LoginResponse(BaseModel):
     authorize_url: str
 

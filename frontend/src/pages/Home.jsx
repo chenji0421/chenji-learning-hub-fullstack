@@ -248,12 +248,34 @@ export default function Home({ user }) {
         )}
       </section>
 
+      {/* 认识这里：关于我 / 学习笔记库 / 友人链接 */}
+      <section className="home-module">
+        <h2>🧭 认识这里</h2>
+        <div className="entry-cards">
+          <a className="entry-card" href="#/about">
+            <span className="entry-card-icon">🙋</span>
+            <h3>关于沉积</h3>
+            <p>了解沉积是谁、正在学习什么、为什么做这个网站。</p>
+          </a>
+          <a className="entry-card" href="#/notes">
+            <span className="entry-card-icon">📚</span>
+            <h3>学习笔记库</h3>
+            <p>查看按课程和主题整理的 PDF 学习笔记。</p>
+          </a>
+          <a className="entry-card" href="#/friends">
+            <span className="entry-card-icon">🤝</span>
+            <h3>友人链接</h3>
+            <p>访问朋友的网站和参考站点。</p>
+          </a>
+        </div>
+      </section>
+
       {/* 快捷入口 */}
       <section className="home-module">
         <h2>⚡ 快捷入口</h2>
         <div className="home-links">
           <a className="btn" href="#/notes">
-            🗂️ 技术笔记
+            📚 学习笔记
           </a>
           <a className="btn" href="#/toolbox">
             🧰 工具箱

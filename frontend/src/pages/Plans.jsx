@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
-import SprintTimeBlocks from "../components/sprint/SprintTimeBlocks.jsx";
-import SprintCompletions from "../components/sprint/SprintCompletions.jsx";
-import SprintSleep from "../components/sprint/SprintSleep.jsx";
 
 // 计划状态 → CSS 类（与 Admin 后台一致）：未开始灰 / 进行中蓝 / 已完成绿 / 暂停橙
 const STATUS_ORDER = ["未开始", "进行中", "已完成", "暂停"];
@@ -85,22 +82,23 @@ const todayStr = () => {
 };
 const nowMonth = () => todayStr().slice(0, 7);
 
-// 阶段冲刺计划标签页：概览（原公开计划）+ 三个真实记录模块 + 其他模块（暂未接入）
+// 阶段冲刺计划标签页：概览（公开计划三视图）+ 每日安排（按日期看）+ 完成度（真实 status 统计）+ 暂未接入
+// ⚠️ 只依赖后端已有的 /api/plans 数据；不调用 sprint 时间块 / 完成记录 / 睡眠记录接口
 const SPRINT_TABS = [
-  { key: "overview", label: "概览", sub: "公开计划" },
-  { key: "time", label: "时间安排", sub: "每天做什么" },
-  { key: "completion", label: "完成度", sub: "做了什么" },
-  { key: "sleep", label: "睡眠", sub: "作息记录" },
-  { key: "more", label: "其他模块", sub: "课程 / 应用 / 记账 / 饮食 / 身体" },
+  { key: "overview", label: "概览", sub: "月 / 列表 / 今日" },
+  { key: "daily", label: "每日安排", sub: "按日期查看" },
+  { key: "completion", label: "完成度", sub: "真实状态统计" },
+  { key: "more", label: "暂未接入", sub: "课程 / 应用 / 记账 / 饮食 / 身体 / 睡眠" },
 ];
 
-// 暂未接入的模块占位（不生成假数据、不放假表格）
+// 暂未接入的模块占位（不生成假数据、不放假表格、不放假记录）
 const MORE_MODULES = [
   { key: "courses", icon: "📖", title: "课程" },
   { key: "apps", icon: "📱", title: "应用" },
   { key: "expenses", icon: "💰", title: "记账" },
   { key: "diet", icon: "🍱", title: "饮食" },
   { key: "body", icon: "⚖️", title: "身体" },
+  { key: "sleep", icon: "😴", title: "睡眠" },
 ];
 
 // 说明：计划模型没有 category 字段，不做「假分类统计」——分类筛选已移除，
@@ -260,10 +258,9 @@ export default function Plans({ user, hashPath }) {
     <section className="sprint-hero">
       <span className="sprint-kicker">Learning Sprint</span>
       <h1 className="sprint-hero-title">沉积的阶段冲刺计划</h1>
-      <p className="sprint-hero-subtitle">浙江大学 25 级本科生 · 准大二 · 阶段学习计划 + 规律生活记录</p>
+      <p className="sprint-hero-subtitle">浙江大学 25 级本科生 · 准大二 · 学习计划与每日复盘</p>
       <p className="sprint-hero-desc">
-        这里记录学习安排、完成情况、课程推进、手机使用、记账、饮食、身体和睡眠。
-        访客可以查看，管理员登录后可以编辑保存。
+        这里用现有计划数据记录每天的目标、上午、下午、晚上安排和复盘。访客可以查看，管理员登录后可以编辑保存。
       </p>
       <div className="sprint-hero-actions">
         {isAdmin ? (
@@ -277,12 +274,12 @@ export default function Plans({ user, hashPath }) {
     </section>
   );
 
-  // ---------- 模式提示条 ----------
+  // ---------- 模式提示条（独立成行，不压标题） ----------
   const modeBanner = (
     <div className={`plan-mode-banner ${isAdmin ? "edit" : "view"}`}>
       {isAdmin
         ? "✍️ 当前是编辑模式，修改会保存到服务器数据库。"
-        : "👀 当前是查看模式。登录管理员账号后，修改会自动保存到后端数据库，并同步到不同设备。"}
+        : "👀 当前是查看模式，只有管理员可以编辑计划。"}
     </div>
   );
 
@@ -797,6 +794,60 @@ export default function Plans({ user, hashPath }) {
     );
   };
 
+  // ---------- 每日安排（按日期查看当天的计划详情，只读 /api/plans 数据） ----------
+  const renderDaily = () => {
+    const plan = byDate[selectedDate] || null;
+    return (
+      <section className="plan-view-body">
+        <div className="plan-view-head">
+          <h1>每日安排</h1>
+          <p className="muted">选择日期，查看这一天的目标、上午 / 下午 / 晚上安排和复盘</p>
+        </div>
+
+        <div className="daily-picker">
+          <label htmlFor="daily-date" className="daily-picker-label">
+            📅 选择日期
+          </label>
+          <input
+            id="daily-date"
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+        </div>
+
+        {plan ? (
+          <div className="plan-card day-plan">
+            <PlanDetail plan={plan} />
+            {isAdmin && (
+              <div className="form-actions">
+                <a href="#/admin" className="btn btn-sm">
+                  ✍️ 去后台编辑这条计划
+                </a>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <h2>这一天暂无公开计划。</h2>
+            <p>
+              {isAdmin
+                ? "这一天还没有计划，管理员可以到后台创建。"
+                : "访客只能查看公开计划，计划由管理员维护。"}
+            </p>
+            {isAdmin && (
+              <div className="form-actions" style={{ justifyContent: "center" }}>
+                <a href="#/admin" className="btn btn-primary">
+                  ✍️ 去后台创建计划
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+    );
+  };
+
   return (
     <div className="plans">
       {header}
@@ -818,20 +869,21 @@ export default function Plans({ user, hashPath }) {
         </>
       )}
 
-      {sprintTab === "time" && <SprintTimeBlocks isAdmin={isAdmin} />}
+      {sprintTab === "daily" && renderDaily()}
 
-      {sprintTab === "completion" && <SprintCompletions isAdmin={isAdmin} />}
-
-      {sprintTab === "sleep" && <SprintSleep isAdmin={isAdmin} />}
+      {sprintTab === "completion" && renderStats()}
 
       {sprintTab === "more" && (
         <section className="sprint-section">
           <div className="sprint-section-head">
             <div>
-              <h2>🧩 更多模块</h2>
-              <p className="muted">课程 / 应用 / 记账 / 饮食 / 身体</p>
+              <h2>🧩 暂未接入</h2>
+              <p className="muted">课程 / 应用 / 记账 / 饮食 / 身体 / 睡眠</p>
             </div>
           </div>
+          <p className="muted" style={{ marginBottom: "var(--sp-4)" }}>
+            以下细分模块还没有接入真实后端，暂不展示假数据。接入后才会出现在正式页面。
+          </p>
           <div className="sprint-more-grid">
             {MORE_MODULES.map((m) => (
               <div key={m.key} className="sprint-more-card">
@@ -839,7 +891,7 @@ export default function Plans({ user, hashPath }) {
                   {m.icon} {m.title}
                 </h3>
                 <p className="muted">
-                  该模块暂未接入真实数据。后续会支持管理员新增和保存记录，当前不会显示假数据。
+                  该模块尚未接入真实后端，当前显示空状态，不会出现假数据。
                 </p>
               </div>
             ))}

@@ -2222,7 +2222,7 @@ details.tool-card[open] {
 .sidebar .logo-mark {
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: 50%; /* 圆形头像占位：C 即 Chenji 的首字母 */
   font-size: 1.2rem;
   font-weight: 700;
   background: linear-gradient(135deg, #4f46e5, #7c3aed);

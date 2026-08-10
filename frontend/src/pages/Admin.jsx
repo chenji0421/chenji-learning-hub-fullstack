@@ -370,6 +370,10 @@ export default function Admin({ user }) {
                   <span className="admin-item">公开计划</span>
                   <span className="badge badge-pub">{plans.length}</span>
                 </li>
+                <li>
+                  <span className="admin-item">部署方式</span>
+                  <span className="badge badge-pub">Docker + GitHub Actions</span>
+                </li>
               </ul>
               <p className="muted" style={{ marginTop: 14 }}>
                 所有数量均来自真实数据库，不含假数据。
@@ -743,6 +747,16 @@ export default function Admin({ user }) {
                   rel="noopener noreferrer"
                 >
                   chenji0421/chenji-learning-hub-fullstack ↗
+                </a>
+              </li>
+              <li>
+                <span className="ops-label">GitHub Actions</span>
+                <a
+                  href="https://github.com/chenji0421/chenji-learning-hub-fullstack/actions"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  查看自动部署流水线 ↗
                 </a>
               </li>
               <li>

@@ -35,10 +35,18 @@ export default function Music() {
   useEffect(() => {
     localStorage.setItem(PLAYLISTS_KEY, JSON.stringify(playlists));
   }, [playlists]);
+  // 迷你播放器读的是同一把 localStorage 钥匙，但需要带上歌名才能显示，
+  // 否则底部播放器永远只会显示「暂无音乐」
   useEffect(() => {
-    localStorage.setItem(PLAYER_KEY, JSON.stringify(player));
+    const stored = (() => {
+      if (!player) return null;
+      const pl = playlists.find((p) => p.id === player.playlistId);
+      const track = pl && (pl.tracks || [])[player.index];
+      return track ? { ...player, title: track.title, src: track.src } : player;
+    })();
+    localStorage.setItem(PLAYER_KEY, JSON.stringify(stored));
     window.dispatchEvent(new Event("music:changed"));
-  }, [player]);
+  }, [player, playlists]);
 
   // 当前播放的曲目
   const currentTrack = (() => {

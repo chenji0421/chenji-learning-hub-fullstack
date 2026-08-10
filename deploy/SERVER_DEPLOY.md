@@ -71,7 +71,9 @@ chmod +x scripts/deploy-production.sh
 
 ## GitHub Actions deploy
 
-The repository includes `.github/workflows/deploy.yml`. It is manual-only at first, so the workflow will not fail before the server is ready. Add these repository secrets before running it:
+The repository includes `.github/workflows/deploy.yml`. It deploys automatically when `main` receives a push, and it can also be run manually from the GitHub Actions page.
+
+Add these repository secrets before relying on automatic deploys:
 
 ```text
 DEPLOY_HOST=47.242.176.227
@@ -82,8 +84,6 @@ DEPLOY_SSH_KEY=<private deploy key>
 ```
 
 The server-side `.env` file must still be created manually and must not be committed.
-
-After the first successful deployment, the workflow can be changed to run on every push to `main`.
 
 ## Backup
 

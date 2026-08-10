@@ -114,6 +114,17 @@ export const api = {
   deleteSleep: (id) =>
     request(`/api/admin/sprint/sleep/${id}`, { method: "DELETE" }),
 
+  // 体重记录（访客只读公开；写操作在 /api/admin/body-weight，按 id 定位，需管理员）
+  listBodyWeights: (limit) =>
+    request(limit ? `/api/body-weight?limit=${limit}` : "/api/body-weight"),
+  getBodyWeight: (id) => request(`/api/body-weight/${id}`),
+  createBodyWeight: (payload) =>
+    request("/api/admin/body-weight", { method: "POST", body: JSON.stringify(payload) }),
+  updateBodyWeight: (id, payload) =>
+    request(`/api/admin/body-weight/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteBodyWeight: (id) =>
+    request(`/api/admin/body-weight/${id}`, { method: "DELETE" }),
+
   // 学习笔记（访客只读公开；写操作在 /api/admin/notes，需管理员）
   listNoteSections: () => request("/api/notes/sections"),
   listNoteItems: (sectionId) =>

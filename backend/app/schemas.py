@@ -8,7 +8,7 @@ from datetime import date as date_type
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 def _utc_aware(dt: datetime) -> datetime:
@@ -201,6 +201,38 @@ class SleepUpdate(BaseModel):
 
 
 class SleepRead(SleepBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
+
+# ---------------- 体重记录 ----------------
+# 注意：date 字段沿用 date_type 别名，避免与类型名冲突（见文件头部注释）
+class BodyWeightRecordBase(BaseModel):
+    date: date_type
+    weight: float = Field(..., gt=0, le=300, description="体重（kg），须为正数且不超过 300")
+    note: str = ""
+    is_public: bool = True
+
+
+class BodyWeightRecordCreate(BodyWeightRecordBase):
+    pass
+
+
+class BodyWeightRecordUpdate(BaseModel):
+    date: date_type | None = None
+    weight: float | None = Field(None, gt=0, le=300, description="体重（kg），须为正数且不超过 300")
+    note: str | None = None
+    is_public: bool | None = None
+
+
+class BodyWeightRecordRead(BodyWeightRecordBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int

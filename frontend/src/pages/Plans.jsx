@@ -92,16 +92,10 @@ const SPRINT_TABS = [
   { key: "more", label: "暂未接入", sub: "课程 / 应用 / 记账" },
 ];
 
-// 生活记录入口（体重 / 运动 / 睡眠 / 饮食）：
-// 目前只是计划系统的后续入口占位，暂未接入真实后端，不生成假数据、不放假表格、不放假保存按钮
+// 生活记录入口（运动 / 睡眠 / 饮食）：
+// 体重已接入真实后端，作为完整功能模块渲染；其余三项仍是后续入口占位，
+// 不生成假数据、不放假表格、不放假保存按钮
 const LIFE_MODULES = [
-  {
-    key: "weight",
-    icon: "⚖️",
-    title: "体重记录",
-    desc: "后续用于记录每天或每周的体重变化，帮助观察身体状态。",
-    note: "后续会支持管理员添加体重记录。",
-  },
   {
     key: "exercise",
     icon: "🏃",
@@ -131,6 +125,75 @@ const MORE_MODULES = [
   { key: "apps", icon: "📱", title: "应用" },
   { key: "expenses", icon: "💰", title: "记账" },
 ];
+
+// 体重记录表单默认值（不写死假体重，默认填今天的日期）
+const WEIGHT_EMPTY_FORM = { date: todayStr(), weight: "", note: "", is_public: true };
+
+// 更新时间格式化：ISO 字符串 → "YYYY-MM-DD HH:mm"（本地时区），失败时原样返回
+const formatTime = (t) => {
+  if (!t) return "—";
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return t;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+// 体重趋势折线图：只用真实记录画 SVG，不引入图表库、不写死假体重。
+// 记录少于 2 条时显示空状态（少于 2 个点画不出趋势）。
+function WeightTrendChart({ records }) {
+  const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length < 2) {
+    return (
+      <div className="weight-chart-empty">
+        记录数量不足，添加更多记录后会显示趋势。
+      </div>
+    );
+  }
+  const W = 600;
+  const H = 200;
+  const PAD = 26;
+  const weights = sorted.map((r) => r.weight);
+  const minW = Math.min(...weights);
+  const maxW = Math.max(...weights);
+  const range = maxW - minW || 1;
+  const x = (i) => PAD + (i * (W - PAD * 2)) / (sorted.length - 1);
+  const y = (w) => H - PAD - ((w - minW) / range) * (H - PAD * 2);
+  const points = sorted.map((r, i) => `${x(i).toFixed(1)},${y(r.weight).toFixed(1)}`).join(" ");
+  // 三条水平参考线：最高 / 中间 / 最低
+  const gridLines = [maxW, minW + range / 2, minW].map((w) => ({
+    w,
+    yy: y(w),
+    label: w.toFixed(1),
+  }));
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="weight-chart-svg"
+      role="img"
+      aria-label="体重变化趋势折线图"
+    >
+      {gridLines.map((g) => (
+        <g key={g.label}>
+          <line
+            x1={PAD}
+            y1={g.yy}
+            x2={W - PAD}
+            y2={g.yy}
+            className="weight-chart-grid"
+          />
+          <text x={2} y={g.yy + 4} className="weight-chart-axis">
+            {g.label}
+          </text>
+        </g>
+      ))}
+      <polyline points={points} className="weight-chart-line" fill="none" />
+      {sorted.map((r, i) => (
+        <circle key={r.id || i} cx={x(i)} cy={y(r.weight)} r="4" className="weight-chart-dot">
+          <title>{`${r.date} · ${r.weight} kg`}</title>
+        </circle>
+      ))}
+    </svg>
+  );
+}
 
 // 说明：计划模型没有 category 字段，不做「假分类统计」——分类筛选已移除，
 // 只保留真实的状态筛选与关键词搜索（数据全部来自后端数据库）。
@@ -172,6 +235,12 @@ export default function Plans({ user, hashPath }) {
   // 列表视图筛选
   const [statusFilter, setStatusFilter] = useState("全部");
   const [keyword, setKeyword] = useState("");
+  // 体重记录（真实数据：来自后端 /api/body-weight）
+  const [weights, setWeights] = useState(null); // null = 加载中
+  const [weightError, setWeightError] = useState("");
+  const [weightForm, setWeightForm] = useState(WEIGHT_EMPTY_FORM);
+  const [editingWeightId, setEditingWeightId] = useState(null);
+  const [weightMessage, setWeightMessage] = useState(null);
   const isAdmin = !!user && user.is_admin;
 
   const refresh = () => {
@@ -179,6 +248,20 @@ export default function Plans({ user, hashPath }) {
   };
   useEffect(() => {
     refresh();
+  }, []);
+
+  // 体重记录：进入计划页就拉一次公开记录（最近 90 条足够看趋势）
+  const refreshWeights = () => {
+    api
+      .listBodyWeights(90)
+      .then(setWeights)
+      .catch((e) => {
+        setWeightError(e.message);
+        setWeights([]); // 接口失败不阻塞页面，显示空状态
+      });
+  };
+  useEffect(() => {
+    refreshWeights();
   }, []);
 
   // 跟随 hash 切换视图 / 月份 / 日期
@@ -217,6 +300,17 @@ export default function Plans({ user, hashPath }) {
     const rate = total > 0 ? Math.round((counts["已完成"] / total) * 100) : 0;
     return { counts, total, rate };
   }, [plans]);
+
+  // 体重统计（真实数据：全部来自后端 body_weight_records）
+  // 接口按 date 倒序返回，第一条即最新记录；hasTrend 需至少 2 条才能画趋势
+  const weightStats = useMemo(() => {
+    const list = weights || [];
+    return {
+      latest: list.length > 0 ? list[0] : null,
+      count: list.length,
+      hasTrend: list.length >= 2,
+    };
+  }, [weights]);
 
   const startEdit = (plan, fallbackDate) => {
     setEditing(true);
@@ -276,6 +370,74 @@ export default function Plans({ user, hashPath }) {
       refresh();
     } catch (err) {
       showMsg(err.message, "error");
+    }
+  };
+
+  // ---------- 体重记录：管理员增删改 ----------
+  const showWeightMsg = (msg, type = "success") => {
+    setWeightMessage({ text: msg, type });
+    setTimeout(() => setWeightMessage(null), type === "error" ? 5000 : 2500);
+  };
+
+  const startWeightEdit = (record) => {
+    setEditingWeightId(record.id);
+    setWeightMessage(null);
+    setWeightForm({
+      date: record.date,
+      weight: String(record.weight),
+      note: record.note || "",
+      is_public: !!record.is_public,
+    });
+  };
+
+  const cancelWeightEdit = () => {
+    setEditingWeightId(null);
+    setWeightMessage(null);
+    setWeightForm(WEIGHT_EMPTY_FORM);
+  };
+
+  const saveWeight = async (e) => {
+    e.preventDefault();
+    if (!weightForm.date) {
+      showWeightMsg("请选择记录日期", "error");
+      return;
+    }
+    const w = Number(weightForm.weight);
+    if (!weightForm.weight || Number.isNaN(w) || w <= 0 || w > 300) {
+      showWeightMsg("体重必须是大于 0 且不超过 300 的数字", "error");
+      return;
+    }
+    const payload = {
+      date: weightForm.date,
+      weight: w,
+      note: (weightForm.note || "").trim(),
+      is_public: weightForm.is_public,
+    };
+    try {
+      if (editingWeightId) {
+        await api.updateBodyWeight(editingWeightId, payload);
+        showWeightMsg("体重记录已保存");
+      } else {
+        await api.createBodyWeight(payload);
+        showWeightMsg("体重记录已新增");
+      }
+      setEditingWeightId(null);
+      setWeightForm(WEIGHT_EMPTY_FORM);
+      refreshWeights();
+    } catch (err) {
+      showWeightMsg(err.message, "error");
+    }
+  };
+
+  const deleteWeight = async (id) => {
+    if (!window.confirm("确定删除这条体重记录？此操作不可撤销。")) return;
+    try {
+      await api.deleteBodyWeight(id);
+      showWeightMsg("体重记录已删除");
+      if (editingWeightId === id) cancelWeightEdit();
+      refreshWeights();
+    } catch (err) {
+      showWeightMsg(err.message, "error");
     }
   };
 
@@ -879,8 +1041,9 @@ export default function Plans({ user, hashPath }) {
     );
   };
 
-  // ---------- 生活记录 tab：体重 / 运动 / 睡眠 / 饮食 四张暂未接入入口卡 ----------
+  // ---------- 生活记录 tab：体重（真实功能）+ 运动 / 睡眠 / 饮食（暂未接入） ----------
   const renderLife = () => {
+    const { latest, count, hasTrend } = weightStats;
     return (
       <section className="sprint-section">
         <div className="sprint-section-head">
@@ -890,8 +1053,174 @@ export default function Plans({ user, hashPath }) {
           </div>
         </div>
         <p className="muted" style={{ marginBottom: "var(--sp-4)" }}>
-          这些模块目前还没有接入真实后端数据，暂时只作为计划系统的后续入口。后续会支持管理员新增、编辑和保存记录，不会显示假数据。
+          体重记录已接入真实后端数据；运动、睡眠和饮食暂未接入真实数据，后续会逐步支持管理员新增、编辑和保存，不会显示假数据。
         </p>
+
+        {weightMessage && (
+          <div className={`toast toast-${weightMessage.type}`}>{weightMessage.text}</div>
+        )}
+
+        {/* ⚖️ 体重记录：真实功能模块（数据全部来自后端 /api/body-weight） */}
+        <div className="weight-module">
+          <div className="weight-module-head">
+            <h3>⚖️ 体重记录</h3>
+            <span className="weight-badge live">已接入真实数据</span>
+          </div>
+
+          {weightError && <div className="error-box">体重加载失败：{weightError}</div>}
+
+          {weights === null ? (
+            <div className="loading">体重记录加载中…</div>
+          ) : (
+            <>
+              {/* 顶部统计卡：最新体重 / 记录数量 / 最近记录日期 / 趋势状态 */}
+              <div className="weight-stats">
+                <div className="ws-item">
+                  <span className="ws-num">{latest ? `${latest.weight} kg` : "—"}</span>
+                  <span className="ws-label">最新体重</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{count}</span>
+                  <span className="ws-label">记录数量</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{latest ? latest.date : "—"}</span>
+                  <span className="ws-label">最近记录日期</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{hasTrend ? "有记录" : "数据不足"}</span>
+                  <span className="ws-label">趋势状态</span>
+                </div>
+              </div>
+
+              {/* 趋势图卡：只画真实记录，少于 2 条显示空状态 */}
+              <div className="weight-card">
+                <h4>📈 体重变化趋势</h4>
+                <WeightTrendChart records={weights} />
+              </div>
+
+              {/* 管理员表单：新增 / 编辑（真实保存到后端，不是假表单） */}
+              {isAdmin && (
+                <div className="weight-card">
+                  <h4>{editingWeightId ? "✏️ 编辑体重记录" : "➕ 新增体重记录"}</h4>
+                  <form className="admin-form" onSubmit={saveWeight}>
+                    <div className="form-row">
+                      <label>
+                        日期
+                        <input
+                          type="date"
+                          value={weightForm.date}
+                          onChange={(e) => setWeightForm({ ...weightForm, date: e.target.value })}
+                          required
+                        />
+                      </label>
+                      <label>
+                        体重（kg）
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="300"
+                          placeholder="输入体重数值"
+                          value={weightForm.weight}
+                          onChange={(e) => setWeightForm({ ...weightForm, weight: e.target.value })}
+                          required
+                        />
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label className="weight-note-label">
+                        备注
+                        <input
+                          value={weightForm.note}
+                          onChange={(e) => setWeightForm({ ...weightForm, note: e.target.value })}
+                          placeholder="可留空"
+                        />
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label className="weight-public-label">
+                        <input
+                          type="checkbox"
+                          checked={weightForm.is_public}
+                          onChange={(e) =>
+                            setWeightForm({ ...weightForm, is_public: e.target.checked })
+                          }
+                        />
+                        公开给访客查看
+                      </label>
+                    </div>
+                    <div className="form-actions">
+                      <button type="submit" className="btn btn-primary">
+                        {editingWeightId ? "保存修改" : "新增记录"}
+                      </button>
+                      {editingWeightId && (
+                        <button type="button" className="btn" onClick={cancelWeightEdit}>
+                          清空表单
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* 记录列表：最近记录（日期 / 体重 / 备注 / 是否公开 / 更新时间） */}
+              <div className="weight-card">
+                <h4>📋 最近记录</h4>
+                {count === 0 ? (
+                  <div className="weight-empty">
+                    <p>暂无体重记录，图表和统计会在有记录后自动生成。</p>
+                    {!isAdmin && (
+                      <p className="muted">访客只能查看公开记录，记录由管理员维护。</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="weight-list">
+                    {weights.map((r) => (
+                      <div key={r.id} className="weight-row">
+                        <span className="weight-row-date">{r.date}</span>
+                        <span className="weight-row-value">{r.weight} kg</span>
+                        <span className="weight-row-note">
+                          {r.note ? r.note : <span className="field-empty">未填写</span>}
+                        </span>
+                        <span className={`weight-public ${r.is_public ? "pub" : "priv"}`}>
+                          {r.is_public ? "公开" : "私密"}
+                        </span>
+                        <span className="weight-time">更新于 {formatTime(r.updated_at)}</span>
+                        {isAdmin && (
+                          <div className="weight-row-actions">
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              onClick={() => startWeightEdit(r)}
+                            >
+                              编辑
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => deleteWeight(r.id)}
+                            >
+                              删除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* 运动 / 睡眠 / 饮食：仍保持暂未接入 */}
+        <div className="sprint-section-head" style={{ marginTop: "var(--sp-5)" }}>
+          <div>
+            <h3>其余生活记录模块</h3>
+            <p className="muted">运动 / 睡眠 / 饮食暂未接入真实数据</p>
+          </div>
+        </div>
         <div className="life-grid">
           {LIFE_MODULES.map((m) => (
             <div key={m.key} className="life-card">
@@ -904,10 +1233,11 @@ export default function Plans({ user, hashPath }) {
             </div>
           ))}
         </div>
+
         <div className="life-next-card">
           <h3>📌 后续计划</h3>
           <p>
-            体重、运动、睡眠和饮食会在后续逐步接入真实后端保存。每次只接入一个模块，避免一次性修改过多导致线上不稳定。
+            运动、睡眠和饮食会在后续逐步接入真实后端保存。每次只接入一个模块，避免一次性修改过多导致线上不稳定。
           </p>
         </div>
       </section>

@@ -155,3 +155,20 @@ class SleepRecord(Base):
     is_public = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class BodyWeightRecord(Base):
+    """体重记录。访客只读公开记录，管理员可增删改。
+
+    体重是真实可保存的数据，不生成假体重。note 可为空。
+    """
+
+    __tablename__ = "body_weight_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True, nullable=False)  # 记录日期
+    weight = Column(Float, nullable=False)  # 体重（kg）
+    note = Column(String(500), default="")  # 备注，可为空
+    is_public = Column(Boolean, default=True)  # 是否公开给访客
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

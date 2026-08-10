@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import NOTES_UPLOAD_DIR, settings
 from app.database import Base, engine
-from app.routers import articles, auth, health, notes, plans, sprint
+from app.routers import articles, auth, body_weight, health, notes, plans, sprint
 
 # 第一版直接建表即可；内容变复杂后再引入 Alembic 做迁移
 Base.metadata.create_all(bind=engine)
@@ -42,6 +42,7 @@ app.include_router(articles.router)
 app.include_router(plans.router)
 app.include_router(notes.router)
 app.include_router(sprint.router)
+app.include_router(body_weight.router)
 
 
 @app.get("/")

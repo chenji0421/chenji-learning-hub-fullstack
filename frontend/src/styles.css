@@ -4886,6 +4886,217 @@ details.tool-card[open] {
   color: var(--muted);
 }
 
+/* ---------- 体重记录（真实功能模块） ---------- */
+.weight-module {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
+}
+
+.weight-module-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.weight-module-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.weight-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+  background: var(--bg-subtle);
+}
+
+.weight-badge.live {
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: var(--success);
+}
+
+/* 顶部统计卡：最新体重 / 记录数量 / 最近记录日期 / 趋势状态 */
+.weight-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.ws-item {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.ws-num {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.ws-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* 体重模块子卡片（趋势图 / 表单 / 列表） */
+.weight-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-4);
+  background: var(--bg-subtle);
+}
+
+.weight-card h4 {
+  margin: 0 0 var(--sp-3);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* 趋势图 SVG */
+.weight-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.weight-chart-grid {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.weight-chart-line {
+  stroke: var(--primary);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.weight-chart-dot {
+  fill: var(--primary);
+}
+
+.weight-chart-axis {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.weight-chart-empty,
+.weight-empty {
+  padding: var(--sp-6);
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.weight-empty p {
+  margin: 0 0 6px;
+}
+
+/* 记录列表 */
+.weight-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.weight-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+
+.weight-row-date {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 96px;
+}
+
+.weight-row-value {
+  font-weight: 700;
+  color: var(--text);
+  min-width: 72px;
+}
+
+.weight-row-note {
+  flex: 1;
+  min-width: 120px;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+
+.weight-public {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+}
+
+.weight-public.pub {
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: var(--success);
+}
+
+.weight-public.priv {
+  color: var(--warning);
+  background: var(--warning-soft);
+  border-color: var(--warning);
+}
+
+.weight-time {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.weight-row-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* 表单细节：备注占整行，公开开关横向排列 */
+.weight-note-label {
+  flex: 1;
+}
+
+.weight-public-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: var(--sp-2) !important;
+  font-size: 0.88rem;
+}
+
 /* ---------- 每日安排 tab：日期选择器 ---------- */
 .daily-picker {
   display: flex;

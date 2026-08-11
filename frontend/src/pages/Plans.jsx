@@ -92,17 +92,10 @@ const SPRINT_TABS = [
   { key: "more", label: "暂未接入", sub: "课程 / 应用 / 记账" },
 ];
 
-// 生活记录入口（运动 / 睡眠 / 饮食）：
-// 体重已接入真实后端，作为完整功能模块渲染；其余三项仍是后续入口占位，
+// 生活记录入口（睡眠 / 饮食）：
+// 体重、运动已接入真实后端，作为完整功能模块渲染；其余两项仍是后续入口占位，
 // 不生成假数据、不放假表格、不放假保存按钮
 const LIFE_MODULES = [
-  {
-    key: "exercise",
-    icon: "🏃",
-    title: "运动记录",
-    desc: "后续用于记录长跑、力量训练、拉伸等运动情况。",
-    note: "后续会支持管理员添加运动记录。",
-  },
   {
     key: "sleep",
     icon: "🌙",
@@ -128,6 +121,19 @@ const MORE_MODULES = [
 
 // 体重记录表单默认值（不写死假体重，默认填今天的日期）
 const WEIGHT_EMPTY_FORM = { date: todayStr(), weight: "", note: "", is_public: true };
+
+// 运动记录表单选项与默认值（不写死假距离、假时长，默认填今天的日期）
+const EXERCISE_TYPES = ["长跑", "力量", "拉伸", "其他"];
+const EXERCISE_INTENSITIES = ["轻松", "中等", "较强", "其他"];
+const EXERCISE_EMPTY_FORM = {
+  date: todayStr(),
+  exercise_type: "",
+  distance_km: "",
+  duration_min: "",
+  intensity: "",
+  note: "",
+  is_public: true,
+};
 
 // 更新时间格式化：ISO 字符串 → "YYYY-MM-DD HH:mm"（本地时区），失败时原样返回
 const formatTime = (t) => {
@@ -195,6 +201,38 @@ function WeightTrendChart({ records }) {
   );
 }
 
+// 运动距离柱状图：只用真实记录画，不引入图表库、不写死假距离。
+// 取最近有距离的记录（最多 7 条），按日期从左到右排列；没有距离数据时显示空状态。
+function ExerciseDistanceChart({ records }) {
+  const sortedDesc = [...records].sort((a, b) => b.date.localeCompare(a.date));
+  const withDistance = sortedDesc.filter((r) => r.distance_km != null && r.distance_km > 0);
+  if (withDistance.length === 0) {
+    return (
+      <div className="weight-chart-empty">
+        还没有带距离的运动记录，添加更多运动记录后会显示柱状图。
+      </div>
+    );
+  }
+  const recent = withDistance.slice(0, 7).reverse(); // 最近 7 条，按日期升序展示
+  const maxKm = Math.max(...recent.map((r) => r.distance_km)) || 1;
+  return (
+    <div className="exercise-chart">
+      {recent.map((r) => {
+        const h = Math.max(4, Math.round((r.distance_km / maxKm) * 100));
+        return (
+          <div key={r.id} className="exercise-chart-col" title={`${r.date} · ${r.distance_km} km`}>
+            <span className="exercise-chart-val">{r.distance_km}</span>
+            <div className="exercise-chart-track">
+              <div className="exercise-chart-bar" style={{ height: `${h}%` }} />
+            </div>
+            <span className="exercise-chart-date">{r.date.slice(5)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // 说明：计划模型没有 category 字段，不做「假分类统计」——分类筛选已移除，
 // 只保留真实的状态筛选与关键词搜索（数据全部来自后端数据库）。
 
@@ -241,6 +279,12 @@ export default function Plans({ user, hashPath }) {
   const [weightForm, setWeightForm] = useState(WEIGHT_EMPTY_FORM);
   const [editingWeightId, setEditingWeightId] = useState(null);
   const [weightMessage, setWeightMessage] = useState(null);
+  // 运动记录（真实数据：来自后端 /api/exercises）
+  const [exercises, setExercises] = useState(null); // null = 加载中
+  const [exerciseError, setExerciseError] = useState("");
+  const [exerciseForm, setExerciseForm] = useState(EXERCISE_EMPTY_FORM);
+  const [editingExerciseId, setEditingExerciseId] = useState(null);
+  const [exerciseMessage, setExerciseMessage] = useState(null);
   const isAdmin = !!user && user.is_admin;
 
   const refresh = () => {
@@ -262,6 +306,20 @@ export default function Plans({ user, hashPath }) {
   };
   useEffect(() => {
     refreshWeights();
+  }, []);
+
+  // 运动记录：进入计划页就拉一次公开记录（最近 90 条足够看统计和图表）
+  const refreshExercises = () => {
+    api
+      .listExercises(90)
+      .then(setExercises)
+      .catch((e) => {
+        setExerciseError(e.message);
+        setExercises([]); // 接口失败不阻塞页面，显示空状态
+      });
+  };
+  useEffect(() => {
+    refreshExercises();
   }, []);
 
   // 跟随 hash 切换视图 / 月份 / 日期
@@ -311,6 +369,20 @@ export default function Plans({ user, hashPath }) {
       hasTrend: list.length >= 2,
     };
   }, [weights]);
+
+  // 运动统计（真实数据：全部来自后端 exercise_records）
+  const exerciseStats = useMemo(() => {
+    const list = exercises || [];
+    const withDist = list.filter((r) => r.distance_km != null && r.distance_km > 0);
+    const totalDistance = withDist.reduce((s, r) => s + r.distance_km, 0);
+    const totalDuration = list.reduce((s, r) => s + (r.duration_min || 0), 0);
+    return {
+      count: list.length,
+      totalDistance: Math.round(totalDistance * 100) / 100,
+      totalDuration,
+      latestDate: list.length > 0 ? list[0].date : null,
+    };
+  }, [exercises]);
 
   const startEdit = (plan, fallbackDate) => {
     setEditing(true);
@@ -438,6 +510,96 @@ export default function Plans({ user, hashPath }) {
       refreshWeights();
     } catch (err) {
       showWeightMsg(err.message, "error");
+    }
+  };
+
+  // ---------- 运动记录：管理员增删改 ----------
+  const showExerciseMsg = (msg, type = "success") => {
+    setExerciseMessage({ text: msg, type });
+    setTimeout(() => setExerciseMessage(null), type === "error" ? 5000 : 2500);
+  };
+
+  const startExerciseEdit = (record) => {
+    setEditingExerciseId(record.id);
+    setExerciseMessage(null);
+    setExerciseForm({
+      date: record.date,
+      exercise_type: record.exercise_type || "",
+      distance_km: record.distance_km != null ? String(record.distance_km) : "",
+      duration_min: record.duration_min != null ? String(record.duration_min) : "",
+      intensity: record.intensity || "",
+      note: record.note || "",
+      is_public: !!record.is_public,
+    });
+  };
+
+  const cancelExerciseEdit = () => {
+    setEditingExerciseId(null);
+    setExerciseMessage(null);
+    setExerciseForm(EXERCISE_EMPTY_FORM);
+  };
+
+  const saveExercise = async (e) => {
+    e.preventDefault();
+    if (!exerciseForm.date) {
+      showExerciseMsg("请选择运动日期", "error");
+      return;
+    }
+    const type = (exerciseForm.exercise_type || "").trim();
+    if (!type) {
+      showExerciseMsg("请选择运动类型", "error");
+      return;
+    }
+    let dist = null;
+    if (exerciseForm.distance_km !== "" && exerciseForm.distance_km != null) {
+      dist = Number(exerciseForm.distance_km);
+      if (Number.isNaN(dist) || dist < 0 || dist > 300) {
+        showExerciseMsg("距离必须是 0~300 之间的数字", "error");
+        return;
+      }
+    }
+    let dur = null;
+    if (exerciseForm.duration_min !== "" && exerciseForm.duration_min != null) {
+      dur = Number(exerciseForm.duration_min);
+      if (Number.isNaN(dur) || !Number.isInteger(dur) || dur < 0 || dur > 1440) {
+        showExerciseMsg("时长必须是 0~1440 的整数分钟", "error");
+        return;
+      }
+    }
+    const payload = {
+      date: exerciseForm.date,
+      exercise_type: type,
+      distance_km: dist,
+      duration_min: dur,
+      intensity: exerciseForm.intensity || "",
+      note: (exerciseForm.note || "").trim(),
+      is_public: exerciseForm.is_public,
+    };
+    try {
+      if (editingExerciseId) {
+        await api.updateExercise(editingExerciseId, payload);
+        showExerciseMsg("运动记录已保存");
+      } else {
+        await api.createExercise(payload);
+        showExerciseMsg("运动记录已新增");
+      }
+      setEditingExerciseId(null);
+      setExerciseForm(EXERCISE_EMPTY_FORM);
+      refreshExercises();
+    } catch (err) {
+      showExerciseMsg(err.message, "error");
+    }
+  };
+
+  const deleteExercise = async (id) => {
+    if (!window.confirm("确定删除这条运动记录？此操作不可撤销。")) return;
+    try {
+      await api.deleteExercise(id);
+      showExerciseMsg("运动记录已删除");
+      if (editingExerciseId === id) cancelExerciseEdit();
+      refreshExercises();
+    } catch (err) {
+      showExerciseMsg(err.message, "error");
     }
   };
 
@@ -1041,9 +1203,10 @@ export default function Plans({ user, hashPath }) {
     );
   };
 
-  // ---------- 生活记录 tab：体重（真实功能）+ 运动 / 睡眠 / 饮食（暂未接入） ----------
+  // ---------- 生活记录 tab：体重 / 运动（真实功能）+ 睡眠 / 饮食（暂未接入） ----------
   const renderLife = () => {
     const { latest, count, hasTrend } = weightStats;
+    const exStats = exerciseStats;
     return (
       <section className="sprint-section">
         <div className="sprint-section-head">
@@ -1053,11 +1216,14 @@ export default function Plans({ user, hashPath }) {
           </div>
         </div>
         <p className="muted" style={{ marginBottom: "var(--sp-4)" }}>
-          体重记录已接入真实后端数据；运动、睡眠和饮食暂未接入真实数据，后续会逐步支持管理员新增、编辑和保存，不会显示假数据。
+          体重、运动记录已接入真实后端数据；睡眠和饮食暂未接入真实数据，后续会逐步支持管理员新增、编辑和保存，不会显示假数据。
         </p>
 
         {weightMessage && (
           <div className={`toast toast-${weightMessage.type}`}>{weightMessage.text}</div>
+        )}
+        {exerciseMessage && (
+          <div className={`toast toast-${exerciseMessage.type}`}>{exerciseMessage.text}</div>
         )}
 
         {/* ⚖️ 体重记录：真实功能模块（数据全部来自后端 /api/body-weight） */}
@@ -1214,11 +1380,236 @@ export default function Plans({ user, hashPath }) {
           )}
         </div>
 
-        {/* 运动 / 睡眠 / 饮食：仍保持暂未接入 */}
+        {/* 🏃 运动记录：真实功能模块（数据全部来自后端 /api/exercises） */}
+        <div className="weight-module">
+          <div className="weight-module-head">
+            <h3>🏃 运动记录</h3>
+            <span className="weight-badge live">已接入真实数据</span>
+          </div>
+
+          {exerciseError && <div className="error-box">运动加载失败：{exerciseError}</div>}
+
+          {exercises === null ? (
+            <div className="loading">运动记录加载中…</div>
+          ) : (
+            <>
+              {/* 顶部统计卡：记录数量 / 总距离 / 总时长 / 最近运动日期 */}
+              <div className="weight-stats">
+                <div className="ws-item">
+                  <span className="ws-num">{exStats.count}</span>
+                  <span className="ws-label">记录数量</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">
+                    {exStats.totalDistance > 0 ? `${exStats.totalDistance} km` : "—"}
+                  </span>
+                  <span className="ws-label">总距离</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">
+                    {exStats.totalDuration > 0 ? `${exStats.totalDuration} 分钟` : "—"}
+                  </span>
+                  <span className="ws-label">总时长</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{exStats.latestDate || "—"}</span>
+                  <span className="ws-label">最近运动日期</span>
+                </div>
+              </div>
+
+              {/* 距离柱状图卡：只画真实记录，没有距离数据时显示空状态 */}
+              <div className="weight-card">
+                <h4>📊 最近运动距离</h4>
+                <ExerciseDistanceChart records={exercises} />
+              </div>
+
+              {/* 管理员表单：新增 / 编辑（真实保存到后端，不是假表单） */}
+              {isAdmin && (
+                <div className="weight-card">
+                  <h4>{editingExerciseId ? "✏️ 编辑运动记录" : "➕ 新增运动记录"}</h4>
+                  <form className="admin-form" onSubmit={saveExercise}>
+                    <div className="form-row">
+                      <label>
+                        日期
+                        <input
+                          type="date"
+                          value={exerciseForm.date}
+                          onChange={(e) =>
+                            setExerciseForm({ ...exerciseForm, date: e.target.value })
+                          }
+                          required
+                        />
+                      </label>
+                      <label>
+                        运动类型
+                        <select
+                          value={exerciseForm.exercise_type}
+                          onChange={(e) =>
+                            setExerciseForm({ ...exerciseForm, exercise_type: e.target.value })
+                          }
+                          required
+                        >
+                          <option value="" disabled>
+                            请选择类型
+                          </option>
+                          {EXERCISE_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label>
+                        距离（km，可选）
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="300"
+                          placeholder="可留空"
+                          value={exerciseForm.distance_km}
+                          onChange={(e) =>
+                            setExerciseForm({ ...exerciseForm, distance_km: e.target.value })
+                          }
+                        />
+                      </label>
+                      <label>
+                        时长（分钟，可选）
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          max="1440"
+                          placeholder="可留空"
+                          value={exerciseForm.duration_min}
+                          onChange={(e) =>
+                            setExerciseForm({ ...exerciseForm, duration_min: e.target.value })
+                          }
+                        />
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label>
+                        强度
+                        <select
+                          value={exerciseForm.intensity}
+                          onChange={(e) =>
+                            setExerciseForm({ ...exerciseForm, intensity: e.target.value })
+                          }
+                        >
+                          <option value="" disabled>
+                            请选择强度
+                          </option>
+                          {EXERCISE_INTENSITIES.map((i) => (
+                            <option key={i} value={i}>
+                              {i}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="weight-public-label">
+                        <input
+                          type="checkbox"
+                          checked={exerciseForm.is_public}
+                          onChange={(e) =>
+                            setExerciseForm({ ...exerciseForm, is_public: e.target.checked })
+                          }
+                        />
+                        公开给访客查看
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label className="weight-note-label">
+                        备注
+                        <input
+                          value={exerciseForm.note}
+                          onChange={(e) =>
+                            setExerciseForm({ ...exerciseForm, note: e.target.value })
+                          }
+                          placeholder="可留空"
+                        />
+                      </label>
+                    </div>
+                    <div className="form-actions">
+                      <button type="submit" className="btn btn-primary">
+                        {editingExerciseId ? "保存修改" : "新增记录"}
+                      </button>
+                      {editingExerciseId && (
+                        <button type="button" className="btn" onClick={cancelExerciseEdit}>
+                          清空表单
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* 记录列表：最近记录（日期 / 类型 / 距离 / 时长 / 强度 / 备注 / 是否公开 / 更新时间） */}
+              <div className="weight-card">
+                <h4>📋 最近记录</h4>
+                {exStats.count === 0 ? (
+                  <div className="weight-empty">
+                    <p>暂无运动记录，统计和图表会在有记录后自动生成。</p>
+                    {!isAdmin && (
+                      <p className="muted">访客只能查看公开记录，记录由管理员维护。</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="weight-list">
+                    {exercises.map((r) => (
+                      <div key={r.id} className="weight-row">
+                        <span className="weight-row-date">{r.date}</span>
+                        <span className="exercise-chip">{r.exercise_type}</span>
+                        <span className="weight-row-value">
+                          {r.distance_km != null ? `${r.distance_km} km` : "—"}
+                        </span>
+                        <span className="weight-row-value">
+                          {r.duration_min != null ? `${r.duration_min} 分钟` : "—"}
+                        </span>
+                        <span className="exercise-intensity">
+                          {r.intensity ? r.intensity : <span className="field-empty">未填写</span>}
+                        </span>
+                        <span className="weight-row-note">
+                          {r.note ? r.note : <span className="field-empty">未填写</span>}
+                        </span>
+                        <span className={`weight-public ${r.is_public ? "pub" : "priv"}`}>
+                          {r.is_public ? "公开" : "私密"}
+                        </span>
+                        <span className="weight-time">更新于 {formatTime(r.updated_at)}</span>
+                        {isAdmin && (
+                          <div className="weight-row-actions">
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              onClick={() => startExerciseEdit(r)}
+                            >
+                              编辑
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => deleteExercise(r.id)}
+                            >
+                              删除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* 睡眠 / 饮食：仍保持暂未接入 */}
         <div className="sprint-section-head" style={{ marginTop: "var(--sp-5)" }}>
           <div>
             <h3>其余生活记录模块</h3>
-            <p className="muted">运动 / 睡眠 / 饮食暂未接入真实数据</p>
+            <p className="muted">睡眠 / 饮食暂未接入真实数据</p>
           </div>
         </div>
         <div className="life-grid">
@@ -1237,7 +1628,7 @@ export default function Plans({ user, hashPath }) {
         <div className="life-next-card">
           <h3>📌 后续计划</h3>
           <p>
-            运动、睡眠和饮食会在后续逐步接入真实后端保存。每次只接入一个模块，避免一次性修改过多导致线上不稳定。
+            睡眠和饮食会在后续逐步接入真实后端保存。每次只接入一个模块，避免一次性修改过多导致线上不稳定。
           </p>
         </div>
       </section>

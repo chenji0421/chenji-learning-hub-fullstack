@@ -172,3 +172,23 @@ class BodyWeightRecord(Base):
     is_public = Column(Boolean, default=True)  # 是否公开给访客
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class ExerciseRecord(Base):
+    """运动记录。访客只读公开记录，管理员可增删改。
+
+    运动是真实可保存的数据，不生成假运动。distance_km / duration_min / intensity / note 可为空。
+    """
+
+    __tablename__ = "exercise_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True, nullable=False)  # 运动日期
+    exercise_type = Column(String(100), nullable=False)  # 运动类型：长跑 / 力量 / 拉伸 / 其他
+    distance_km = Column(Float, nullable=True)  # 距离（km），可选
+    duration_min = Column(Integer, nullable=True)  # 时长（分钟），可选
+    intensity = Column(String(50), default="")  # 强度：轻松 / 中等 / 较强 / 其他
+    note = Column(String(500), default="")  # 备注，可为空
+    is_public = Column(Boolean, default=True)  # 是否公开给访客
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

@@ -244,6 +244,43 @@ class BodyWeightRecordRead(BodyWeightRecordBase):
         return _utc_aware(dt)
 
 
+# ---------------- 运动记录 ----------------
+class ExerciseRecordBase(BaseModel):
+    date: date_type
+    exercise_type: str = Field(..., min_length=1, description="运动类型，必填：长跑 / 力量 / 拉伸 / 其他")
+    distance_km: float | None = Field(None, ge=0, le=300, description="距离（km），可选，0~300")
+    duration_min: int | None = Field(None, ge=0, le=1440, description="时长（分钟），可选，0~1440")
+    intensity: str = ""  # 强度：轻松 / 中等 / 较强 / 其他，可选
+    note: str = ""
+    is_public: bool = True
+
+
+class ExerciseRecordCreate(ExerciseRecordBase):
+    pass
+
+
+class ExerciseRecordUpdate(BaseModel):
+    date: date_type | None = None
+    exercise_type: str | None = Field(None, min_length=1, description="运动类型不能为空字符串")
+    distance_km: float | None = Field(None, ge=0, le=300, description="距离（km），0~300")
+    duration_min: int | None = Field(None, ge=0, le=1440, description="时长（分钟），0~1440")
+    intensity: str | None = None
+    note: str | None = None
+    is_public: bool | None = None
+
+
+class ExerciseRecordRead(ExerciseRecordBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
+
 # ---------------- 认证 / 用户 ----------------
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)

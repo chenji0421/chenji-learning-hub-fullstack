@@ -5097,6 +5097,75 @@ details.tool-card[open] {
   font-size: 0.88rem;
 }
 
+/* ---------- 运动记录（真实功能模块） ---------- */
+/* 复用 weight-* 的结构样式（模块卡 / 统计卡 / 子卡片 / 列表行 / 公开标签 / 空状态），
+   以下只补充运动专属：类型徽章、强度、距离柱状图 */
+.exercise-chip {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary);
+}
+
+.exercise-intensity {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 40px;
+}
+
+/* 最近运动距离柱状图（纯 CSS，不引入图表库） */
+.exercise-chart {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-3);
+  min-height: 170px;
+  padding: var(--sp-2) 0 0;
+}
+
+.exercise-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.exercise-chart-track {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 42px;
+  height: 110px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.exercise-chart-bar {
+  width: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: height 0.3s ease;
+}
+
+.exercise-chart-val {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.exercise-chart-date {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
 /* ---------- 每日安排 tab：日期选择器 ---------- */
 .daily-picker {
   display: flex;

@@ -125,6 +125,17 @@ export const api = {
   deleteBodyWeight: (id) =>
     request(`/api/admin/body-weight/${id}`, { method: "DELETE" }),
 
+  // 运动记录（访客只读公开；写操作在 /api/admin/exercises，按 id 定位，需管理员）
+  listExercises: (limit) =>
+    request(limit ? `/api/exercises?limit=${limit}` : "/api/exercises"),
+  getExercise: (id) => request(`/api/exercises/${id}`),
+  createExercise: (payload) =>
+    request("/api/admin/exercises", { method: "POST", body: JSON.stringify(payload) }),
+  updateExercise: (id, payload) =>
+    request(`/api/admin/exercises/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteExercise: (id) =>
+    request(`/api/admin/exercises/${id}`, { method: "DELETE" }),
+
   // 学习笔记（访客只读公开；写操作在 /api/admin/notes，需管理员）
   listNoteSections: () => request("/api/notes/sections"),
   listNoteItems: (sectionId) =>

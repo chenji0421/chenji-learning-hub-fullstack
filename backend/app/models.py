@@ -192,3 +192,21 @@ class ExerciseRecord(Base):
     is_public = Column(Boolean, default=True)  # 是否公开给访客
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class DietRecord(Base):
+    """饮食记录。访客只读公开记录，管理员可增删改。
+
+    饮食是真实可保存的数据，不生成假饮食。content 必填，note 可为空。
+    """
+
+    __tablename__ = "diet_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True, nullable=False)  # 记录日期
+    meal_type = Column(String(50), nullable=False)  # 餐次：早餐 / 午餐 / 晚餐 / 加餐 / 其他
+    content = Column(String(500), nullable=False)  # 吃了什么，必填
+    note = Column(String(500), default="")  # 备注，可为空
+    is_public = Column(Boolean, default=True)  # 是否公开给访客
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

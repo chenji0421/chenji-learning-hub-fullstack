@@ -136,6 +136,29 @@ export const api = {
   deleteExercise: (id) =>
     request(`/api/admin/exercises/${id}`, { method: "DELETE" }),
 
+  // 睡眠记录（访客只读公开；写操作在 /api/admin/sleep-records，按 id 定位，需管理员）
+  // 与旧的 /api/sprint/sleep 路径区分开，生活记录只用新的 sleep-records 路径
+  listSleepRecords: (limit) =>
+    request(limit ? `/api/sleep-records?limit=${limit}` : "/api/sleep-records"),
+  getSleepRecord: (id) => request(`/api/sleep-records/${id}`),
+  createSleepRecord: (payload) =>
+    request("/api/admin/sleep-records", { method: "POST", body: JSON.stringify(payload) }),
+  updateSleepRecord: (id, payload) =>
+    request(`/api/admin/sleep-records/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteSleepRecord: (id) =>
+    request(`/api/admin/sleep-records/${id}`, { method: "DELETE" }),
+
+  // 饮食记录（访客只读公开；写操作在 /api/admin/diet-records，按 id 定位，需管理员）
+  listDietRecords: (limit) =>
+    request(limit ? `/api/diet-records?limit=${limit}` : "/api/diet-records"),
+  getDietRecord: (id) => request(`/api/diet-records/${id}`),
+  createDietRecord: (payload) =>
+    request("/api/admin/diet-records", { method: "POST", body: JSON.stringify(payload) }),
+  updateDietRecord: (id, payload) =>
+    request(`/api/admin/diet-records/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteDietRecord: (id) =>
+    request(`/api/admin/diet-records/${id}`, { method: "DELETE" }),
+
   // 学习笔记（访客只读公开；写操作在 /api/admin/notes，需管理员）
   listNoteSections: () => request("/api/notes/sections"),
   listNoteItems: (sectionId) =>

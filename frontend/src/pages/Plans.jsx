@@ -92,26 +92,6 @@ const SPRINT_TABS = [
   { key: "more", label: "暂未接入", sub: "课程 / 应用 / 记账" },
 ];
 
-// 生活记录入口（睡眠 / 饮食）：
-// 体重、运动已接入真实后端，作为完整功能模块渲染；其余两项仍是后续入口占位，
-// 不生成假数据、不放假表格、不放假保存按钮
-const LIFE_MODULES = [
-  {
-    key: "sleep",
-    icon: "🌙",
-    title: "睡眠记录",
-    desc: "后续用于记录入睡时间、起床时间、睡眠时长和睡眠质量。",
-    note: "后续会支持管理员添加睡眠记录。",
-  },
-  {
-    key: "diet",
-    icon: "🍱",
-    title: "饮食记录",
-    desc: "后续用于记录早餐、午餐、晚餐和加餐情况，帮助观察饮食规律。",
-    note: "后续会支持管理员添加饮食记录。",
-  },
-];
-
 // 暂未接入的模块占位（不生成假数据、不放假表格、不放假记录）
 const MORE_MODULES = [
   { key: "courses", icon: "📖", title: "课程" },
@@ -131,6 +111,28 @@ const EXERCISE_EMPTY_FORM = {
   distance_km: "",
   duration_min: "",
   intensity: "",
+  note: "",
+  is_public: true,
+};
+
+// 睡眠记录选项与默认值（不写死假睡眠时长，默认填今天的日期）
+const SLEEP_QUALITIES = ["很好", "还行", "一般", "较差", "其他"];
+const SLEEP_EMPTY_FORM = {
+  date: todayStr(),
+  sleep_time: "",
+  wake_time: "",
+  duration_hours: "",
+  quality: "",
+  note: "",
+  is_public: true,
+};
+
+// 饮食记录选项与默认值（不写死假食物，默认填今天的日期）
+const MEAL_TYPES = ["早餐", "午餐", "晚餐", "加餐", "其他"];
+const DIET_EMPTY_FORM = {
+  date: todayStr(),
+  meal_type: "",
+  content: "",
   note: "",
   is_public: true,
 };
@@ -233,6 +235,40 @@ function ExerciseDistanceChart({ records }) {
   );
 }
 
+// 睡眠时长柱状图：只用真实记录画，不引入图表库、不写死假睡眠时长。
+// 取最近有睡眠时长的记录（最多 7 条），按日期从左到右排列；少于 2 条时长数据时显示空状态。
+function SleepDurationChart({ records }) {
+  const sortedDesc = [...records].sort((a, b) => b.date.localeCompare(a.date));
+  const withDuration = sortedDesc.filter(
+    (r) => r.duration_hours != null && r.duration_hours > 0
+  );
+  if (withDuration.length < 2) {
+    return (
+      <div className="weight-chart-empty">
+        记录数量不足，添加更多睡眠记录后会显示趋势。
+      </div>
+    );
+  }
+  const recent = withDuration.slice(0, 7).reverse(); // 最近 7 条，按日期升序展示
+  const maxDur = Math.max(...recent.map((r) => r.duration_hours)) || 1;
+  return (
+    <div className="exercise-chart">
+      {recent.map((r) => {
+        const h = Math.max(4, Math.round((r.duration_hours / maxDur) * 100));
+        return (
+          <div key={r.id} className="exercise-chart-col" title={`${r.date} · ${r.duration_hours} 小时`}>
+            <span className="exercise-chart-val">{r.duration_hours}</span>
+            <div className="exercise-chart-track">
+              <div className="exercise-chart-bar" style={{ height: `${h}%` }} />
+            </div>
+            <span className="exercise-chart-date">{r.date.slice(5)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // 说明：计划模型没有 category 字段，不做「假分类统计」——分类筛选已移除，
 // 只保留真实的状态筛选与关键词搜索（数据全部来自后端数据库）。
 
@@ -285,6 +321,18 @@ export default function Plans({ user, hashPath }) {
   const [exerciseForm, setExerciseForm] = useState(EXERCISE_EMPTY_FORM);
   const [editingExerciseId, setEditingExerciseId] = useState(null);
   const [exerciseMessage, setExerciseMessage] = useState(null);
+  // 睡眠记录（真实数据：来自后端 /api/sleep-records）
+  const [sleeps, setSleeps] = useState(null); // null = 加载中
+  const [sleepError, setSleepError] = useState("");
+  const [sleepForm, setSleepForm] = useState(SLEEP_EMPTY_FORM);
+  const [editingSleepId, setEditingSleepId] = useState(null);
+  const [sleepMessage, setSleepMessage] = useState(null);
+  // 饮食记录（真实数据：来自后端 /api/diet-records）
+  const [diets, setDiets] = useState(null); // null = 加载中
+  const [dietError, setDietError] = useState("");
+  const [dietForm, setDietForm] = useState(DIET_EMPTY_FORM);
+  const [editingDietId, setEditingDietId] = useState(null);
+  const [dietMessage, setDietMessage] = useState(null);
   const isAdmin = !!user && user.is_admin;
 
   const refresh = () => {
@@ -320,6 +368,34 @@ export default function Plans({ user, hashPath }) {
   };
   useEffect(() => {
     refreshExercises();
+  }, []);
+
+  // 睡眠记录：进入计划页就拉一次公开记录（最近 90 条足够看统计和图表）
+  const refreshSleeps = () => {
+    api
+      .listSleepRecords(90)
+      .then(setSleeps)
+      .catch((e) => {
+        setSleepError(e.message);
+        setSleeps([]); // 接口失败不阻塞页面，显示空状态
+      });
+  };
+  useEffect(() => {
+    refreshSleeps();
+  }, []);
+
+  // 饮食记录：进入计划页就拉一次公开记录（最近 90 条足够看统计）
+  const refreshDiets = () => {
+    api
+      .listDietRecords(90)
+      .then(setDiets)
+      .catch((e) => {
+        setDietError(e.message);
+        setDiets([]); // 接口失败不阻塞页面，显示空状态
+      });
+  };
+  useEffect(() => {
+    refreshDiets();
   }, []);
 
   // 跟随 hash 切换视图 / 月份 / 日期
@@ -383,6 +459,34 @@ export default function Plans({ user, hashPath }) {
       latestDate: list.length > 0 ? list[0].date : null,
     };
   }, [exercises]);
+
+  // 睡眠统计（真实数据：全部来自后端 sleep_records）
+  // 接口按 date 倒序返回，第一条即最新记录；平均时长只统计有有效时长的记录
+  const sleepStats = useMemo(() => {
+    const list = sleeps || [];
+    const withDur = list.filter((r) => r.duration_hours != null && r.duration_hours > 0);
+    const avgDuration =
+      withDur.length > 0
+        ? Math.round((withDur.reduce((s, r) => s + r.duration_hours, 0) / withDur.length) * 10) / 10
+        : null;
+    return {
+      count: list.length,
+      latestDate: list.length > 0 ? list[0].date : null,
+      avgDuration,
+      latestDuration: withDur.length > 0 ? withDur[0].duration_hours : null,
+    };
+  }, [sleeps]);
+
+  // 饮食统计（真实数据：全部来自后端 diet_records）
+  const dietStats = useMemo(() => {
+    const list = diets || [];
+    const mealCounts = { 早餐: 0, 午餐: 0, 晚餐: 0, 加餐: 0, 其他: 0 };
+    for (const r of list) {
+      if (r.meal_type in mealCounts) mealCounts[r.meal_type] += 1;
+      else mealCounts["其他"] += 1;
+    }
+    return { count: list.length, latestDate: list.length > 0 ? list[0].date : null, mealCounts };
+  }, [diets]);
 
   const startEdit = (plan, fallbackDate) => {
     setEditing(true);
@@ -600,6 +704,158 @@ export default function Plans({ user, hashPath }) {
       refreshExercises();
     } catch (err) {
       showExerciseMsg(err.message, "error");
+    }
+  };
+
+  // ---------- 睡眠记录：管理员增删改 ----------
+  const showSleepMsg = (msg, type = "success") => {
+    setSleepMessage({ text: msg, type });
+    setTimeout(() => setSleepMessage(null), type === "error" ? 5000 : 2500);
+  };
+
+  const startSleepEdit = (record) => {
+    setEditingSleepId(record.id);
+    setSleepMessage(null);
+    setSleepForm({
+      date: record.date,
+      sleep_time: record.sleep_time || "",
+      wake_time: record.wake_time || "",
+      duration_hours: record.duration_hours != null ? String(record.duration_hours) : "",
+      quality: record.quality || "",
+      note: record.note || "",
+      is_public: !!record.is_public,
+    });
+  };
+
+  const cancelSleepEdit = () => {
+    setEditingSleepId(null);
+    setSleepMessage(null);
+    setSleepForm(SLEEP_EMPTY_FORM);
+  };
+
+  const saveSleep = async (e) => {
+    e.preventDefault();
+    if (!sleepForm.date) {
+      showSleepMsg("请选择睡眠日期", "error");
+      return;
+    }
+    let dur = null;
+    if (sleepForm.duration_hours !== "" && sleepForm.duration_hours != null) {
+      dur = Number(sleepForm.duration_hours);
+      if (Number.isNaN(dur) || dur <= 0 || dur > 24) {
+        showSleepMsg("睡眠时长必须是大于 0 且不超过 24 的数字", "error");
+        return;
+      }
+    }
+    const payload = {
+      date: sleepForm.date,
+      sleep_time: (sleepForm.sleep_time || "").trim(),
+      wake_time: (sleepForm.wake_time || "").trim(),
+      duration_hours: dur,
+      quality: sleepForm.quality || "",
+      note: (sleepForm.note || "").trim(),
+      is_public: sleepForm.is_public,
+    };
+    try {
+      if (editingSleepId) {
+        await api.updateSleepRecord(editingSleepId, payload);
+        showSleepMsg("睡眠记录已保存");
+      } else {
+        await api.createSleepRecord(payload);
+        showSleepMsg("睡眠记录已新增");
+      }
+      setEditingSleepId(null);
+      setSleepForm(SLEEP_EMPTY_FORM);
+      refreshSleeps();
+    } catch (err) {
+      showSleepMsg(err.message, "error");
+    }
+  };
+
+  const deleteSleep = async (id) => {
+    if (!window.confirm("确定删除这条睡眠记录？此操作不可撤销。")) return;
+    try {
+      await api.deleteSleepRecord(id);
+      showSleepMsg("睡眠记录已删除");
+      if (editingSleepId === id) cancelSleepEdit();
+      refreshSleeps();
+    } catch (err) {
+      showSleepMsg(err.message, "error");
+    }
+  };
+
+  // ---------- 饮食记录：管理员增删改 ----------
+  const showDietMsg = (msg, type = "success") => {
+    setDietMessage({ text: msg, type });
+    setTimeout(() => setDietMessage(null), type === "error" ? 5000 : 2500);
+  };
+
+  const startDietEdit = (record) => {
+    setEditingDietId(record.id);
+    setDietMessage(null);
+    setDietForm({
+      date: record.date,
+      meal_type: record.meal_type || "",
+      content: record.content || "",
+      note: record.note || "",
+      is_public: !!record.is_public,
+    });
+  };
+
+  const cancelDietEdit = () => {
+    setEditingDietId(null);
+    setDietMessage(null);
+    setDietForm(DIET_EMPTY_FORM);
+  };
+
+  const saveDiet = async (e) => {
+    e.preventDefault();
+    if (!dietForm.date) {
+      showDietMsg("请选择饮食日期", "error");
+      return;
+    }
+    const mealType = (dietForm.meal_type || "").trim();
+    if (!mealType) {
+      showDietMsg("请选择餐次", "error");
+      return;
+    }
+    const content = (dietForm.content || "").trim();
+    if (!content) {
+      showDietMsg("请填写吃了什么", "error");
+      return;
+    }
+    const payload = {
+      date: dietForm.date,
+      meal_type: mealType,
+      content,
+      note: (dietForm.note || "").trim(),
+      is_public: dietForm.is_public,
+    };
+    try {
+      if (editingDietId) {
+        await api.updateDietRecord(editingDietId, payload);
+        showDietMsg("饮食记录已保存");
+      } else {
+        await api.createDietRecord(payload);
+        showDietMsg("饮食记录已新增");
+      }
+      setEditingDietId(null);
+      setDietForm(DIET_EMPTY_FORM);
+      refreshDiets();
+    } catch (err) {
+      showDietMsg(err.message, "error");
+    }
+  };
+
+  const deleteDiet = async (id) => {
+    if (!window.confirm("确定删除这条饮食记录？此操作不可撤销。")) return;
+    try {
+      await api.deleteDietRecord(id);
+      showDietMsg("饮食记录已删除");
+      if (editingDietId === id) cancelDietEdit();
+      refreshDiets();
+    } catch (err) {
+      showDietMsg(err.message, "error");
     }
   };
 
@@ -1203,7 +1459,7 @@ export default function Plans({ user, hashPath }) {
     );
   };
 
-  // ---------- 生活记录 tab：体重 / 运动（真实功能）+ 睡眠 / 饮食（暂未接入） ----------
+  // ---------- 生活记录 tab：体重 / 运动 / 睡眠 / 饮食（全部真实功能） ----------
   const renderLife = () => {
     const { latest, count, hasTrend } = weightStats;
     const exStats = exerciseStats;
@@ -1216,7 +1472,7 @@ export default function Plans({ user, hashPath }) {
           </div>
         </div>
         <p className="muted" style={{ marginBottom: "var(--sp-4)" }}>
-          体重、运动记录已接入真实后端数据；睡眠和饮食暂未接入真实数据，后续会逐步支持管理员新增、编辑和保存，不会显示假数据。
+          体重、运动、睡眠、饮食记录已接入真实后端数据；所有统计和图表只使用真实记录，不显示假数据。
         </p>
 
         {weightMessage && (
@@ -1224,6 +1480,12 @@ export default function Plans({ user, hashPath }) {
         )}
         {exerciseMessage && (
           <div className={`toast toast-${exerciseMessage.type}`}>{exerciseMessage.text}</div>
+        )}
+        {sleepMessage && (
+          <div className={`toast toast-${sleepMessage.type}`}>{sleepMessage.text}</div>
+        )}
+        {dietMessage && (
+          <div className={`toast toast-${dietMessage.type}`}>{dietMessage.text}</div>
         )}
 
         {/* ⚖️ 体重记录：真实功能模块（数据全部来自后端 /api/body-weight） */}
@@ -1605,31 +1867,407 @@ export default function Plans({ user, hashPath }) {
           )}
         </div>
 
-        {/* 睡眠 / 饮食：仍保持暂未接入 */}
-        <div className="sprint-section-head" style={{ marginTop: "var(--sp-5)" }}>
-          <div>
-            <h3>其余生活记录模块</h3>
-            <p className="muted">睡眠 / 饮食暂未接入真实数据</p>
+        {/* 🌙 睡眠记录：真实功能模块（数据全部来自后端 /api/sleep-records） */}
+        <div className="weight-module">
+          <div className="weight-module-head">
+            <h3>🌙 睡眠记录</h3>
+            <span className="weight-badge live">已接入真实数据</span>
           </div>
-        </div>
-        <div className="life-grid">
-          {LIFE_MODULES.map((m) => (
-            <div key={m.key} className="life-card">
-              <span className="life-status">暂未接入</span>
-              <h3>
-                {m.icon} {m.title}
-              </h3>
-              <p>{m.desc}</p>
-              <p className="life-card-note">{m.note}</p>
-            </div>
-          ))}
+
+          {sleepError && <div className="error-box">睡眠加载失败：{sleepError}</div>}
+
+          {sleeps === null ? (
+            <div className="loading">睡眠记录加载中…</div>
+          ) : (
+            <>
+              {/* 顶部统计卡：记录数量 / 最近睡眠日期 / 平均睡眠时长 / 最近一次睡眠时长 */}
+              <div className="weight-stats">
+                <div className="ws-item">
+                  <span className="ws-num">{sleepStats.count}</span>
+                  <span className="ws-label">记录数量</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{sleepStats.latestDate || "—"}</span>
+                  <span className="ws-label">最近睡眠日期</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">
+                    {sleepStats.avgDuration != null ? `${sleepStats.avgDuration} 小时` : "—"}
+                  </span>
+                  <span className="ws-label">平均睡眠时长</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">
+                    {sleepStats.latestDuration != null
+                      ? `${sleepStats.latestDuration} 小时`
+                      : "—"}
+                  </span>
+                  <span className="ws-label">最近一次睡眠时长</span>
+                </div>
+              </div>
+
+              {/* 睡眠时长柱状图卡：只画真实记录，时长数据不足时显示空状态 */}
+              <div className="weight-card">
+                <h4>📊 最近睡眠时长</h4>
+                <SleepDurationChart records={sleeps} />
+              </div>
+
+              {/* 管理员表单：新增 / 编辑（真实保存到后端，不是假表单） */}
+              {isAdmin && (
+                <div className="weight-card">
+                  <h4>{editingSleepId ? "✏️ 编辑睡眠记录" : "➕ 新增睡眠记录"}</h4>
+                  <form className="admin-form" onSubmit={saveSleep}>
+                    <div className="form-row">
+                      <label>
+                        日期
+                        <input
+                          type="date"
+                          value={sleepForm.date}
+                          onChange={(e) => setSleepForm({ ...sleepForm, date: e.target.value })}
+                          required
+                        />
+                      </label>
+                      <label>
+                        睡眠质量
+                        <select
+                          value={sleepForm.quality}
+                          onChange={(e) => setSleepForm({ ...sleepForm, quality: e.target.value })}
+                        >
+                          <option value="" disabled>
+                            请选择质量
+                          </option>
+                          {SLEEP_QUALITIES.map((q) => (
+                            <option key={q} value={q}>
+                              {q}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label>
+                        入睡时间
+                        <input
+                          type="time"
+                          value={sleepForm.sleep_time}
+                          onChange={(e) =>
+                            setSleepForm({ ...sleepForm, sleep_time: e.target.value })
+                          }
+                          placeholder="如 23:30"
+                        />
+                      </label>
+                      <label>
+                        起床时间
+                        <input
+                          type="time"
+                          value={sleepForm.wake_time}
+                          onChange={(e) =>
+                            setSleepForm({ ...sleepForm, wake_time: e.target.value })
+                          }
+                          placeholder="如 07:10"
+                        />
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label>
+                        睡眠时长（小时，可选）
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="24"
+                          placeholder="可留空"
+                          value={sleepForm.duration_hours}
+                          onChange={(e) =>
+                            setSleepForm({ ...sleepForm, duration_hours: e.target.value })
+                          }
+                        />
+                      </label>
+                      <label className="weight-public-label">
+                        <input
+                          type="checkbox"
+                          checked={sleepForm.is_public}
+                          onChange={(e) =>
+                            setSleepForm({ ...sleepForm, is_public: e.target.checked })
+                          }
+                        />
+                        公开给访客查看
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label className="weight-note-label">
+                        备注
+                        <input
+                          value={sleepForm.note}
+                          onChange={(e) => setSleepForm({ ...sleepForm, note: e.target.value })}
+                          placeholder="可留空"
+                        />
+                      </label>
+                    </div>
+                    <div className="form-actions">
+                      <button type="submit" className="btn btn-primary">
+                        {editingSleepId ? "保存修改" : "新增记录"}
+                      </button>
+                      {editingSleepId && (
+                        <button type="button" className="btn" onClick={cancelSleepEdit}>
+                          清空表单
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* 记录列表：最近记录（日期 / 质量 / 入睡 / 起床 / 时长 / 备注 / 是否公开 / 更新时间） */}
+              <div className="weight-card">
+                <h4>📋 最近记录</h4>
+                {sleepStats.count === 0 ? (
+                  <div className="weight-empty">
+                    <p>暂无睡眠记录，统计和图表会在有记录后自动生成。</p>
+                    {!isAdmin && (
+                      <p className="muted">访客只能查看公开记录，记录由管理员维护。</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="weight-list">
+                    {sleeps.map((r) => (
+                      <div key={r.id} className="weight-row">
+                        <span className="weight-row-date">{r.date}</span>
+                        <span className="exercise-intensity">
+                          {r.quality ? r.quality : <span className="field-empty">未填写</span>}
+                        </span>
+                        <span className="weight-row-value">
+                          {r.sleep_time ? r.sleep_time : "—"}
+                        </span>
+                        <span className="weight-row-value">
+                          {r.wake_time ? r.wake_time : "—"}
+                        </span>
+                        <span className="weight-row-value">
+                          {r.duration_hours != null && r.duration_hours > 0
+                            ? `${r.duration_hours} 小时`
+                            : "—"}
+                        </span>
+                        <span className="weight-row-note">
+                          {r.note ? r.note : <span className="field-empty">未填写</span>}
+                        </span>
+                        <span className={`weight-public ${r.is_public ? "pub" : "priv"}`}>
+                          {r.is_public ? "公开" : "私密"}
+                        </span>
+                        <span className="weight-time">更新于 {formatTime(r.updated_at)}</span>
+                        {isAdmin && (
+                          <div className="weight-row-actions">
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              onClick={() => startSleepEdit(r)}
+                            >
+                              编辑
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => deleteSleep(r.id)}
+                            >
+                              删除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="life-next-card">
-          <h3>📌 后续计划</h3>
-          <p>
-            睡眠和饮食会在后续逐步接入真实后端保存。每次只接入一个模块，避免一次性修改过多导致线上不稳定。
-          </p>
+        {/* 🍱 饮食记录：真实功能模块（数据全部来自后端 /api/diet-records） */}
+        <div className="weight-module">
+          <div className="weight-module-head">
+            <h3>🍱 饮食记录</h3>
+            <span className="weight-badge live">已接入真实数据</span>
+          </div>
+
+          {dietError && <div className="error-box">饮食加载失败：{dietError}</div>}
+
+          {diets === null ? (
+            <div className="loading">饮食记录加载中…</div>
+          ) : (
+            <>
+              {/* 顶部统计卡：记录数量 / 最近记录日期 / 各餐次数量（只统计真实记录） */}
+              <div className="weight-stats">
+                <div className="ws-item">
+                  <span className="ws-num">{dietStats.count}</span>
+                  <span className="ws-label">记录数量</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{dietStats.latestDate || "—"}</span>
+                  <span className="ws-label">最近记录日期</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{dietStats.mealCounts["早餐"]}</span>
+                  <span className="ws-label">早餐</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{dietStats.mealCounts["午餐"]}</span>
+                  <span className="ws-label">午餐</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{dietStats.mealCounts["晚餐"]}</span>
+                  <span className="ws-label">晚餐</span>
+                </div>
+                <div className="ws-item">
+                  <span className="ws-num">{dietStats.mealCounts["加餐"]}</span>
+                  <span className="ws-label">加餐</span>
+                </div>
+              </div>
+
+              {/* 餐次分布卡：只统计真实记录，无记录显示空状态 */}
+              <div className="weight-card">
+                <h4>🍽️ 餐次分布</h4>
+                {dietStats.count === 0 ? (
+                  <div className="weight-chart-empty">
+                    暂无饮食记录，添加更多饮食记录后会显示餐次统计。
+                  </div>
+                ) : (
+                  <div className="diet-meal-grid">
+                    {MEAL_TYPES.map((m) => (
+                      <div key={m} className="diet-meal-item">
+                        <span className="diet-meal-count">{dietStats.mealCounts[m]}</span>
+                        <span className="diet-meal-label">{m}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 管理员表单：新增 / 编辑（真实保存到后端，不是假表单） */}
+              {isAdmin && (
+                <div className="weight-card">
+                  <h4>{editingDietId ? "✏️ 编辑饮食记录" : "➕ 新增饮食记录"}</h4>
+                  <form className="admin-form" onSubmit={saveDiet}>
+                    <div className="form-row">
+                      <label>
+                        日期
+                        <input
+                          type="date"
+                          value={dietForm.date}
+                          onChange={(e) => setDietForm({ ...dietForm, date: e.target.value })}
+                          required
+                        />
+                      </label>
+                      <label>
+                        餐次
+                        <select
+                          value={dietForm.meal_type}
+                          onChange={(e) => setDietForm({ ...dietForm, meal_type: e.target.value })}
+                          required
+                        >
+                          <option value="" disabled>
+                            请选择餐次
+                          </option>
+                          {MEAL_TYPES.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label>
+                        吃了什么
+                        <input
+                          value={dietForm.content}
+                          onChange={(e) => setDietForm({ ...dietForm, content: e.target.value })}
+                          placeholder="如：米饭、清炒时蔬"
+                          required
+                        />
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label className="weight-note-label">
+                        备注
+                        <input
+                          value={dietForm.note}
+                          onChange={(e) => setDietForm({ ...dietForm, note: e.target.value })}
+                          placeholder="可留空"
+                        />
+                      </label>
+                      <label className="weight-public-label">
+                        <input
+                          type="checkbox"
+                          checked={dietForm.is_public}
+                          onChange={(e) =>
+                            setDietForm({ ...dietForm, is_public: e.target.checked })
+                          }
+                        />
+                        公开给访客查看
+                      </label>
+                    </div>
+                    <div className="form-actions">
+                      <button type="submit" className="btn btn-primary">
+                        {editingDietId ? "保存修改" : "新增记录"}
+                      </button>
+                      {editingDietId && (
+                        <button type="button" className="btn" onClick={cancelDietEdit}>
+                          清空表单
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* 记录列表：最近记录（日期 / 餐次 / 内容 / 备注 / 是否公开 / 更新时间） */}
+              <div className="weight-card">
+                <h4>📋 最近记录</h4>
+                {dietStats.count === 0 ? (
+                  <div className="weight-empty">
+                    <p>暂无饮食记录，统计会在有记录后自动生成。</p>
+                    {!isAdmin && (
+                      <p className="muted">访客只能查看公开记录，记录由管理员维护。</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="weight-list">
+                    {diets.map((r) => (
+                      <div key={r.id} className="weight-row">
+                        <span className="weight-row-date">{r.date}</span>
+                        <span className="exercise-chip">{r.meal_type}</span>
+                        <span className="weight-row-note">{r.content}</span>
+                        <span className="weight-row-note">
+                          {r.note ? r.note : <span className="field-empty">未填写</span>}
+                        </span>
+                        <span className={`weight-public ${r.is_public ? "pub" : "priv"}`}>
+                          {r.is_public ? "公开" : "私密"}
+                        </span>
+                        <span className="weight-time">更新于 {formatTime(r.updated_at)}</span>
+                        {isAdmin && (
+                          <div className="weight-row-actions">
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              onClick={() => startDietEdit(r)}
+                            >
+                              编辑
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => deleteDiet(r.id)}
+                            >
+                              删除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </section>
     );

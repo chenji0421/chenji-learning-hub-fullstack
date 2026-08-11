@@ -6,9 +6,14 @@
 """
 from datetime import date as date_type
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_serializer
+
+# 必填且不能为空字符串（去首尾空白后再判空，避免 "   " 这种纯空白通过校验）
+RequiredNonEmpty = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1)
+]
 
 
 def _utc_aware(dt: datetime) -> datetime:
@@ -270,6 +275,78 @@ class ExerciseRecordUpdate(BaseModel):
 
 
 class ExerciseRecordRead(ExerciseRecordBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
+
+# ---------------- 睡眠记录（生活记录） ----------------
+# 与阶段冲刺计划里的 sprint Sleep 是两个接口体系：生活记录走独立的 /api/sleep-records，
+# 复用同一个 sleep_records 表（字段已匹配），但校验更严格（duration_hours 0~24 可选）。
+class SleepRecordBase(BaseModel):
+    date: date_type
+    sleep_time: str = ""  # 入睡时间，如 "23:30"
+    wake_time: str = ""  # 起床时间，如 "07:10"
+    duration_hours: float | None = Field(None, gt=0, le=24, description="睡眠时长（小时），可选，0~24")
+    quality: str = ""  # 睡眠质量：很好 / 还行 / 一般 / 较差 / 其他
+    note: str = ""
+    is_public: bool = True
+
+
+class SleepRecordCreate(SleepRecordBase):
+    pass
+
+
+class SleepRecordUpdate(BaseModel):
+    date: date_type | None = None
+    sleep_time: str | None = None
+    wake_time: str | None = None
+    duration_hours: float | None = Field(None, gt=0, le=24, description="睡眠时长（小时），0~24")
+    quality: str | None = None
+    note: str | None = None
+    is_public: bool | None = None
+
+
+class SleepRecordRead(SleepRecordBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
+
+# ---------------- 饮食记录 ----------------
+class DietRecordBase(BaseModel):
+    date: date_type
+    meal_type: str = Field(..., min_length=1, description="餐次，必填：早餐 / 午餐 / 晚餐 / 加餐 / 其他")
+    content: RequiredNonEmpty = Field(..., description="吃了什么，必填，不能为空字符串")
+    note: str = ""
+    is_public: bool = True
+
+
+class DietRecordCreate(DietRecordBase):
+    pass
+
+
+class DietRecordUpdate(BaseModel):
+    date: date_type | None = None
+    meal_type: str | None = Field(None, min_length=1, description="餐次不能为空字符串")
+    content: RequiredNonEmpty | None = Field(None, description="吃了什么不能为空字符串")
+    note: str | None = None
+    is_public: bool | None = None
+
+
+class DietRecordRead(DietRecordBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int

@@ -3,6 +3,7 @@ import { api, getToken } from "../api.js";
 import renderMarkdown from "../markdown.jsx";
 import { changelog } from "../data/changelog.js";
 import NotesAdmin from "../components/NotesAdmin.jsx";
+import AboutProfileAdmin from "../components/AboutProfileAdmin.jsx";
 import SprintTimeBlocks from "../components/sprint/SprintTimeBlocks.jsx";
 import SprintCompletions from "../components/sprint/SprintCompletions.jsx";
 import SprintSleep from "../components/sprint/SprintSleep.jsx";
@@ -55,6 +56,7 @@ const ADMIN_TABS = [
   { key: "notes", icon: "📚", label: "学习笔记" },
   { key: "plans", icon: "🗓️", label: "计划管理" },
   { key: "sprint", icon: "🚀", label: "阶段计划" },
+  { key: "about", icon: "🙋", label: "关于我" },
   { key: "ops", icon: "🛠️", label: "运维状态" },
 ];
 
@@ -849,6 +851,9 @@ export default function Admin({ user }) {
 
       {/* ============ 学习笔记 ============ */}
       {tab === "notes" && <NotesAdmin />}
+
+      {/* ============ 关于我管理 ============ */}
+      {tab === "about" && <AboutProfileAdmin showMsg={showMsg} />}
 
       {/* ============ 运维状态 ============ */}
       {tab === "ops" && (

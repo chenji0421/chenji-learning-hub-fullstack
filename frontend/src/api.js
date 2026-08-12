@@ -193,4 +193,12 @@ export const api = {
     fd.append("file", file);
     return requestForm(`/api/admin/notes/items/${id}/upload`, { method: "POST", body: fd });
   },
+
+  // 关于我（访客只读；编辑 / 恢复默认在 /api/admin/about-profile，需管理员）
+  getAboutProfile: () => request("/api/about-profile"),
+  getAdminAboutProfile: () => request("/api/admin/about-profile"),
+  updateAboutProfile: (payload) =>
+    request("/api/admin/about-profile", { method: "PUT", body: JSON.stringify(payload) }),
+  resetAboutProfile: () =>
+    request("/api/admin/about-profile/reset", { method: "POST" }),
 };

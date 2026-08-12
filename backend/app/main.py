@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import NOTES_UPLOAD_DIR, settings
 from app.database import Base, engine
 from app.routers import (
+    about_profile,
     articles,
     auth,
     body_weight,
@@ -57,6 +58,7 @@ app.include_router(body_weight.router)
 app.include_router(exercise_records.router)
 app.include_router(sleep_records.router)
 app.include_router(diet_records.router)
+app.include_router(about_profile.router)
 
 
 @app.get("/")

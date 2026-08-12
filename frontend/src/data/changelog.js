@@ -15,6 +15,21 @@
 // - items：具体更新点
 export const changelog = [
   {
+    version: "v1.5.11",
+    date: "2026-08-12",
+    type: "优化",
+    title: "关于我内容支持后台编辑",
+    summary: "关于我页面改为从后端读取内容，管理员可以在后台直接编辑基本信息、Hero、兴趣习惯、正在学习、网站说明和目标列表；访客只能查看，内容为空或接口失败时显示友好空状态，不生成假经历。",
+    items: [
+      "关于我页面改为从后端读取内容，不再写死在 frontend/src/data/profile.js",
+      "新增后端 AboutProfile 模型与接口：访客只读 GET /api/about-profile，管理员 GET / PUT /api/admin/about-profile、POST /api/admin/about-profile/reset",
+      "新增管理后台「关于我」编辑区，按区块编辑基本信息 / Hero 区 / 兴趣习惯 / 正在学习 / 网站说明 / 目标列表",
+      "管理员可保存、恢复默认、清空表单、预览前台；访客只能查看",
+      "内容为空或接口失败时显示友好空状态，不会白屏",
+      "保持真实、克制、持续学习的表达，不生成假经历、假荣誉、假奖项"
+    ],
+  },
+  {
     version: "v1.5.10",
     date: "2026-08-12",
     type: "优化",

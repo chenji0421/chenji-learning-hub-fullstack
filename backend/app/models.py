@@ -210,3 +210,41 @@ class DietRecord(Base):
     is_public = Column(Boolean, default=True)  # 是否公开给访客
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class AboutProfile(Base):
+    """关于我：整页内容存一条记录（id 恒为 1），数组类字段用 JSON 列。
+
+    公开 GET /api/about-profile 只返回 is_public=True 的内容；
+    管理员可编辑 / 恢复为默认。默认值只写确认过的真实信息，
+    不生成假经历、假荣誉、假奖项、假论文、假比赛。
+    """
+
+    __tablename__ = "about_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)  # 恒为 1，全站单条
+    # Hero 区
+    kicker = Column(String(100), default="About Me")
+    title = Column(String(200), default="你好，我是沉积")
+    subtitle = Column(String(300), default="")
+    description = Column(Text, default="")
+    # 基本信息
+    name = Column(String(100), default="沉积")
+    school = Column(String(200), default="浙江大学")
+    grade = Column(String(100), default="25 级本科生")
+    stage = Column(String(100), default="准大二")
+    interests = Column(String(300), default="长跑、画画")
+    current_status = Column(String(100), default="学习中")
+    # 兴趣习惯（[{icon, title, desc}]）
+    hobby_cards = Column(JSON, default=list)
+    # 正在学习（[{name, desc}]）
+    learning_items = Column(JSON, default=list)
+    # 网站用途（字符串数组）
+    site_usage = Column(JSON, default=list)
+    # 这个网站是什么
+    site_desc = Column(Text, default="")
+    # 想做的事（字符串数组）
+    goal_items = Column(JSON, default=list)
+    is_public = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

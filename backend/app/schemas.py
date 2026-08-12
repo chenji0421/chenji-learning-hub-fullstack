@@ -365,6 +365,60 @@ class DietRecordRead(DietRecordBase):
         return _utc_aware(dt)
 
 
+# ---------------- 关于我 ----------------
+# About 整页内容存一条记录（id=1）。输出基类不做严格约束，避免响应校验误伤存量数据。
+class AboutProfileBase(BaseModel):
+    """关于我整页内容（公开读 + 管理员写共用同一组字段）。"""
+    kicker: str = "About Me"
+    title: str = "你好，我是沉积"
+    subtitle: str = ""
+    description: str = ""
+    name: str = "沉积"
+    school: str = "浙江大学"
+    grade: str = "25 级本科生"
+    stage: str = "准大二"
+    interests: str = "长跑、画画"
+    current_status: str = "学习中"
+    hobby_cards: list[dict] = Field(default_factory=list)  # [{icon, title, desc}]
+    learning_items: list[dict] = Field(default_factory=list)  # [{name, desc}]
+    site_usage: list[str] = Field(default_factory=list)
+    site_desc: str = ""
+    goal_items: list[str] = Field(default_factory=list)
+
+
+class AboutProfileUpdate(BaseModel):
+    """管理员编辑关于我：所有字段可选，只更新提交的部分。"""
+    kicker: str | None = None
+    title: str | None = None
+    subtitle: str | None = None
+    description: str | None = None
+    name: str | None = None
+    school: str | None = None
+    grade: str | None = None
+    stage: str | None = None
+    interests: str | None = None
+    current_status: str | None = None
+    hobby_cards: list[dict] | None = None
+    learning_items: list[dict] | None = None
+    site_usage: list[str] | None = None
+    site_desc: str | None = None
+    goal_items: list[str] | None = None
+    is_public: bool | None = None
+
+
+class AboutProfileRead(AboutProfileBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    is_public: bool
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def _ser_utc(self, dt: datetime) -> datetime:
+        return _utc_aware(dt)
+
+
 # ---------------- 认证 / 用户 ----------------
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)

@@ -4203,11 +4203,97 @@ details.tool-card[open] {
   flex-shrink: 0;
 }
 
+/* 关于我后台编辑：动态列表行 */
+.about-admin-row {
+  display: flex;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  align-items: center;
+}
+
+.about-admin-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.about-admin-row .about-admin-icon {
+  flex: 0 0 110px;
+}
+
+.about-admin-row .about-admin-name {
+  flex: 0 0 220px;
+}
+
+.about-admin-remove {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.about-admin-remove:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.about-admin-add {
+  margin-top: var(--sp-2);
+}
+
+/* 关于我「是否公开」开关 */
+.about-public-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  cursor: pointer;
+  padding: var(--sp-2) 0;
+}
+
+.about-public-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.about-public-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.about-public-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 /* 响应式：小屏头像与文字改上下排列 */
 @media (max-width: 560px) {
   .about-hero {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .about-admin-row {
+    flex-wrap: wrap;
+  }
+
+  .about-admin-row .about-admin-icon,
+  .about-admin-row .about-admin-name {
+    flex: 1 1 100%;
   }
 }
 

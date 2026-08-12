@@ -290,17 +290,24 @@ class ExerciseRecordRead(ExerciseRecordBase):
 # 与阶段冲刺计划里的 sprint Sleep 是两个接口体系：生活记录走独立的 /api/sleep-records，
 # 复用同一个 sleep_records 表（字段已匹配），但校验更严格（duration_hours 0~24 可选）。
 class SleepRecordBase(BaseModel):
+    """睡眠记录输出基类。
+
+    注意：duration_hours 在输出基类里不做 gt/le 校验——表里已有的旧 sprint 记录
+    默认 duration_hours=0.0，若在响应校验时要求 >0 会让 GET /api/sleep-records 直接 500。
+    gt=0 / le=24 的严格校验只在 Create / Update 输入时生效。
+    """
     date: date_type
     sleep_time: str = ""  # 入睡时间，如 "23:30"
     wake_time: str = ""  # 起床时间，如 "07:10"
-    duration_hours: float | None = Field(None, gt=0, le=24, description="睡眠时长（小时），可选，0~24")
+    duration_hours: float | None = None  # 睡眠时长（小时），可选
     quality: str = ""  # 睡眠质量：很好 / 还行 / 一般 / 较差 / 其他
     note: str = ""
     is_public: bool = True
 
 
 class SleepRecordCreate(SleepRecordBase):
-    pass
+    """新增睡眠记录：duration_hours 若填写必须 0 < d <= 24。"""
+    duration_hours: float | None = Field(None, gt=0, le=24, description="睡眠时长（小时），可选，0~24")
 
 
 class SleepRecordUpdate(BaseModel):

@@ -1268,6 +1268,39 @@ h3 {
   font-size: 1.08rem;
 }
 
+/* 系统概览 */
+.overview-dashboard { display: grid; gap: var(--sp-5); }
+.overview-welcome { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: var(--sp-6); padding: clamp(22px, 4vw, 36px); color: #fff; background: linear-gradient(135deg, #111827, #1e3a5f); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+.overview-eyebrow { display: block; margin-bottom: 8px; color: #93c5fd; font-size: .72rem; font-weight: 700; letter-spacing: .14em; }
+.overview-welcome h2 { margin: 0 0 8px; font-size: clamp(1.6rem, 3vw, 2.2rem); }
+.overview-welcome p { margin: 0; color: #cbd5e1; line-height: 1.7; }
+.overview-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.overview-meta span { min-width: 0; padding: 11px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(255,255,255,.07); color: #cbd5e1; font-size: .78rem; }
+.overview-meta strong { display: block; margin-top: 4px; color: #fff; overflow-wrap: anywhere; }
+.overview-section, .overview-reminder { padding: var(--sp-5); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); box-shadow: var(--shadow-sm); }
+.overview-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: var(--sp-4); flex-wrap: wrap; }
+.overview-section-head h2, .overview-reminder h2 { margin: 0 0 4px; font-size: 1.08rem; }
+.overview-section-head p { margin: 0; color: var(--muted); font-size: .85rem; }
+.overview-health-grid, .overview-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.overview-mini-card, .overview-stat-card { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-subtle); transition: transform .15s ease, border-color .15s ease; }
+.overview-mini-card:hover, .overview-stat-card:hover, .overview-actions > *:hover { transform: translateY(-2px); border-color: var(--primary-soft-border); }
+.overview-mini-card span, .overview-stat-card > span:not(.overview-stat-icon) { display: block; color: var(--muted); font-size: .82rem; }
+.overview-mini-card strong { display: block; margin-top: 8px; font-size: 1rem; overflow-wrap: anywhere; }
+.overview-stat-icon { float: right; font-size: 1.25rem; }
+.overview-stat-card strong { display: block; margin-top: 8px; font-size: 1.35rem; overflow-wrap: anywhere; }
+.overview-stat-card.is-loading strong, .overview-stat-card.is-error strong { font-size: .88rem; color: var(--muted); }
+.overview-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5); }
+.overview-updates { display: grid; gap: 10px; }
+.overview-updates article { position: relative; padding: 13px 14px; border-left: 3px solid var(--primary); border-radius: 0 12px 12px 0; background: var(--bg-subtle); }
+.overview-updates article > div { display: flex; align-items: center; gap: 8px; }
+.overview-updates h3 { margin: 7px 0 3px; font-size: .94rem; overflow-wrap: anywhere; }
+.overview-updates time { color: var(--muted); font-size: .78rem; }
+.overview-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.overview-actions > * { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; color: var(--text); text-align: left; font: inherit; font-size: .86rem; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-subtle); cursor: pointer; transition: transform .15s ease, border-color .15s ease; text-decoration: none; overflow-wrap: anywhere; }
+.overview-reminder { border-color: #f59e0b55; background: linear-gradient(135deg, var(--card), #f59e0b0d); }
+.overview-reminder ul { margin: 12px 0 0; padding-left: 20px; color: var(--text-secondary); line-height: 1.8; }
+@media (max-width: 760px) { .overview-welcome, .overview-columns { grid-template-columns: 1fr; } .overview-meta, .overview-actions { grid-template-columns: 1fr; } .overview-section, .overview-reminder { padding: var(--sp-4); } }
+
 /* Toast 提示 */
 .toast {
   background: var(--text);
@@ -5440,5 +5473,370 @@ details.tool-card[open] {
 
   .sprint-bar-label {
     font-size: 0.62rem;
+  }
+}
+
+/* ============================================================
+   移动端阅读体验优化（v1.5.13）
+   只影响小屏，不改变桌面端布局：
+   - 768px：中间档（平板竖屏 / 大手机横屏）
+   - 640px：手机竖屏主档
+   - 480px：小屏手机兜底
+   ============================================================ */
+
+/* ---------- 768px：中间档 ---------- */
+@media (max-width: 768px) {
+  /* 主内容左右留白合理，不贴边、不横向溢出 */
+  .page-content {
+    min-width: 0;
+  }
+  .main-area {
+    padding: var(--sp-4) 14px 40px;
+  }
+
+  /* 顶栏：品牌和按钮互不挤压 */
+  .topbar {
+    padding: 4px 0 14px;
+    gap: var(--sp-2);
+  }
+  .topbar-logo {
+    font-size: 0.94rem;
+    max-width: 46vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .topbar-right {
+    gap: 6px;
+  }
+  .topbar-online {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+  }
+
+  /* 媒体元素一律不撑破页面 */
+  img,
+  video,
+  iframe {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* 长文本兜底换行：链接 / 列表 / 段落 / 说明文案 */
+  .article-body a,
+  .article-body li,
+  .article-body p,
+  .article-body blockquote,
+  .changelog-summary,
+  .changelog-items li,
+  .note-desc,
+  .tool-card-desc,
+  .tool-card-row,
+  .plan-goal,
+  .plan-slots li,
+  .plan-review,
+  .sprint-hero-desc {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* 代码块：小屏自动换行，不再横向撑破 */
+  .article-body pre,
+  .tool-command-code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+    overflow-x: auto;
+  }
+
+  /* 卡片内边距统一收紧 */
+  .article-detail,
+  .note-card,
+  .changelog-card,
+  .plan-card,
+  .plan-stats,
+  .sprint-section,
+  .weight-module,
+  .weight-card,
+  .tool-command,
+  .entry-card,
+  .wb-card {
+    padding: var(--sp-4);
+  }
+
+  /* 文章阅读：正文 16px、行高舒适 */
+  .article-detail {
+    max-width: none;
+  }
+  .article-body {
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+  .article-body p {
+    margin: 14px 0;
+  }
+
+  /* 后台：标签页横向滚动，避免挤压换行 */
+  .admin-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+  .admin-tab {
+    flex-shrink: 0;
+    min-height: 40px;
+  }
+  .editor-preview {
+    max-height: 420px;
+  }
+
+  /* 可点击区域：小屏不小于 40px 高 */
+  .btn,
+  .filter-chip,
+  .sprint-tab,
+  .admin-actions button {
+    min-height: 40px;
+  }
+
+  /* 顶部导航与学习笔记分区树：条目加高，好点 */
+  .sidebar-nav a,
+  .notes-tree-item {
+    min-height: 40px;
+  }
+
+  /* 迷你播放器：按钮加大，好按 */
+  .mini-player-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .mini-player-play {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* 计划：生活记录统计卡两列 */
+  .weight-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------- 640px：手机竖屏主档 ---------- */
+@media (max-width: 640px) {
+  /* 表单控件 16px，防止 iOS 聚焦自动放大 */
+  .admin-form input,
+  .admin-form select,
+  .admin-form textarea,
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .search-box input,
+  .sprint-date-input,
+  .daily-picker input,
+  input[type="text"],
+  input[type="search"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* 文章详情：间距更紧凑 */
+  .article-detail {
+    padding: var(--sp-5) var(--sp-4);
+  }
+  .article-lead {
+    font-size: 1rem;
+  }
+  .article-meta {
+    font-size: 0.84rem;
+    gap: 6px;
+  }
+  .article-body pre {
+    font-size: 0.82rem;
+  }
+  .article-body blockquote {
+    padding: 8px 12px;
+  }
+  .article-body li {
+    margin: 6px 0;
+  }
+  .article-body ul,
+  .article-body ol {
+    padding-left: 22px;
+  }
+
+  /* 计划：视图切换占满、切换按钮好点 */
+  .plan-view-switch {
+    width: 100%;
+  }
+  .plan-view-btn {
+    min-height: 40px;
+  }
+  .plan-view-head h1 {
+    font-size: 1.25rem;
+  }
+  .cal-grid {
+    gap: 4px;
+  }
+  .weight-row-actions {
+    width: 100%;
+  }
+
+  /* 后台：统计卡两列、操作按钮不挤 */
+  .overview-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .overview-actions {
+    grid-template-columns: 1fr;
+  }
+  .admin-list li {
+    gap: var(--sp-2);
+  }
+  .admin-item-title {
+    white-space: normal;
+  }
+
+  /* 工具箱：命令块单列 */
+  .tool-command-grid {
+    grid-template-columns: 1fr;
+  }
+  .tool-card-desc {
+    font-size: 0.85rem;
+  }
+
+  /* 更新日志：卡片紧凑 */
+  .changelog-card {
+    padding: var(--sp-4);
+  }
+  .changelog-head-row {
+    gap: 6px;
+  }
+
+  /* 学习笔记：卡片底部信息纵向排列 */
+  .note-card-foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---------- 480px：小屏手机兜底 ---------- */
+@media (max-width: 480px) {
+  /* 顶栏：隐藏「在线工作台」文字，只留状态圆点 */
+  .topbar-online {
+    font-size: 0;
+  }
+  .topbar-online-dot {
+    vertical-align: middle;
+  }
+
+  /* 标题层级收紧 */
+  .page-title,
+  .article-detail h1 {
+    font-size: 1.35rem;
+  }
+  .sprint-hero {
+    padding: var(--sp-5) var(--sp-3);
+  }
+  .sprint-hero-title {
+    font-size: 1.2rem;
+  }
+  .sprint-hero-subtitle {
+    font-size: 0.9rem;
+  }
+
+  /* 计划标签页：隐藏副标题，按钮更紧凑 */
+  .sprint-tab-sub {
+    display: none;
+  }
+  .sprint-tab {
+    padding: 9px 12px;
+  }
+  .plan-stats-nums {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ps-item.rate {
+    grid-column: 1 / -1;
+  }
+
+  /* 月历：格子更小，只保留日期 */
+  .cal-cell {
+    min-height: 52px;
+    padding: 3px 4px;
+    gap: 2px;
+  }
+  .cal-head {
+    font-size: 0.72rem;
+  }
+  .cal-day {
+    font-size: 0.82rem;
+  }
+
+  /* 生活记录列表：字段纵向排列，按钮右对齐 */
+  .weight-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .weight-row-date {
+    min-width: 0;
+  }
+  .weight-row-actions {
+    align-self: flex-end;
+  }
+
+  /* 后台：单列布局、按钮换行 */
+  .admin-tab {
+    padding: 7px 10px;
+    font-size: 0.84rem;
+  }
+  .admin-list li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .admin-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .form-row {
+    flex-direction: column;
+  }
+
+  /* 文章：进一步收紧留白 */
+  .article-detail {
+    padding: var(--sp-4) 14px;
+  }
+  .article-meta .tag {
+    margin-bottom: 4px;
+  }
+
+  /* 学习笔记：卡片更紧凑 */
+  .note-card {
+    padding: var(--sp-4);
+  }
+  .note-card-head {
+    gap: var(--sp-2);
+  }
+  .note-file-icon {
+    font-size: 1.3rem;
+  }
+
+  /* 更新日志：版本信息纵向排列 */
+  .changelog-current {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .changelog-version {
+    font-size: 0.95rem;
+  }
+
+  /* 工具箱命令块 */
+  .tool-command-code {
+    font-size: 0.76rem;
+    padding: 12px;
   }
 }

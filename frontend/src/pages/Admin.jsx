@@ -48,9 +48,15 @@ const toStatusClass = (s) => STATUS_CLASS[toStatusLabel(s)] || "pending";
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 const pad = (n) => String(n).padStart(2, "0");
 
-// 后台标签页：总览 / 写文章 / 内容库 / 计划管理 / 运维状态
+const EMPTY_RESOURCE = { status: "loading", count: null };
+const countResult = (data) => ({
+  status: "success",
+  count: Array.isArray(data) ? data.length : null,
+});
+
+// 后台标签页：系统概览 / 写文章 / 内容库 / 计划管理 / 运维状态
 const ADMIN_TABS = [
-  { key: "overview", icon: "📊", label: "总览" },
+  { key: "overview", icon: "📊", label: "系统概览" },
   { key: "editor", icon: "✍️", label: "写文章" },
   { key: "library", icon: "🗃️", label: "内容库" },
   { key: "notes", icon: "📚", label: "学习笔记" },
@@ -85,10 +91,42 @@ export default function Admin({ user }) {
   // 运维状态：后端健康检查
   const [health, setHealth] = useState(null);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [overviewStats, setOverviewStats] = useState({
+    articles: EMPTY_RESOURCE,
+    plans: EMPTY_RESOURCE,
+    notes: EMPTY_RESOURCE,
+    weights: EMPTY_RESOURCE,
+    exercises: EMPTY_RESOURCE,
+    sleep: EMPTY_RESOURCE,
+    diet: EMPTY_RESOURCE,
+  });
+
+  const setOverviewStat = (key, value) => {
+    setOverviewStats((current) => ({ ...current, [key]: value }));
+  };
+
+  const loadOverviewResource = async (key, loader, onSuccess) => {
+    setOverviewStat(key, EMPTY_RESOURCE);
+    try {
+      const data = await loader();
+      if (onSuccess) onSuccess(data);
+      setOverviewStat(key, countResult(data));
+    } catch {
+      setOverviewStat(key, { status: "error", count: null });
+    }
+  };
 
   const refresh = () => {
-    api.listArticles().then(setArticles).catch(() => {});
-    api.listPlans().then(setPlans).catch(() => {});
+    loadOverviewResource("articles", api.listArticles, setArticles);
+    loadOverviewResource("plans", api.listPlans, setPlans);
+  };
+
+  const loadOverviewStats = () => {
+    loadOverviewResource("notes", api.listNoteItems);
+    loadOverviewResource("weights", api.listBodyWeights);
+    loadOverviewResource("exercises", api.listExercises);
+    loadOverviewResource("sleep", api.listSleepRecords);
+    loadOverviewResource("diet", api.listDietRecords);
   };
 
   // ---------- 运维状态 ----------
@@ -106,6 +144,7 @@ export default function Admin({ user }) {
 
   useEffect(() => {
     refresh();
+    loadOverviewStats();
     runHealthCheck();
   }, []);
 
@@ -327,6 +366,16 @@ export default function Admin({ user }) {
       ? articles
       : articles.filter((a) => a.status === articleFilter);
 
+  const latestChange = changelog[0];
+  const recentChanges = changelog.slice(0, 3);
+  const overviewCount = (key) => {
+    const item = overviewStats[key];
+    if (item.status === "loading") return "加载中";
+    if (item.status === "error") return "暂时无法获取";
+    if (typeof item.count !== "number") return "暂未接入统计";
+    return item.count;
+  };
+
   return (
     <div className="admin workbench">
       <div className="wb-head">
@@ -358,86 +407,72 @@ export default function Admin({ user }) {
 
       {/* ============ 总览 ============ */}
       {tab === "overview" && (
-        <>
-          <div className="wb-stats">
-            <div className="stat-card">
-              <div className="stat-num">{publishedCount}</div>
-              <div className="stat-label">已发布文章</div>
+        <div className="overview-dashboard">
+          <section className="overview-welcome">
+            <div>
+              <span className="overview-eyebrow">SYSTEM OVERVIEW</span>
+              <h2>后台控制台</h2>
+              <p>管理沉积 Learning Hub 的内容、计划、笔记和站点状态。</p>
             </div>
-            <div className="stat-card">
-              <div className="stat-num">{draftCount}</div>
-              <div className="stat-label">草稿</div>
+            <div className="overview-meta">
+              <span>当前用户<strong>{user.username}</strong></span>
+              <span>当前角色<strong>{user.username === "chenji0421" ? "管理员" : "普通用户"}</strong></span>
+              <span>当前版本<strong>{latestChange?.version || "暂未记录"}</strong></span>
+              <span>最近更新<strong>{latestChange ? `${latestChange.title} · ${latestChange.date}` : "暂未记录"}</strong></span>
             </div>
-            <div className="stat-card">
-              <div className="stat-num">{plans.length}</div>
-              <div className="stat-label">公开计划</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-num">{health ? (health.ok ? "✅" : "❌") : "…"}</div>
-              <div className="stat-label">后端健康</div>
-              <p className="stat-hint">
-                {healthLoading ? "检查中…" : health ? (health.ok ? "正常" : "异常") : ""}
-              </p>
-            </div>
-          </div>
+          </section>
 
-          <div className="wb-grid">
-            <section className="wb-card">
-              <h2>⚡ 快捷操作</h2>
-              <div className="home-links">
-                <button className="btn btn-primary" onClick={startNewArticle}>
-                  ✍️ 写新文章
-                </button>
-                <button className="btn" onClick={() => setTab("library")}>
-                  🗃️ 内容库
-                </button>
-                <button className="btn" onClick={() => setTab("plans")}>
-                  🗓️ 计划管理
-                </button>
-                <button className="btn" onClick={() => setTab("ops")}>
-                  🛠️ 运维状态
-                </button>
+          <section className="overview-section">
+            <div className="overview-section-head"><div><h2>站点健康状态</h2><p>各状态独立获取，单项异常不会影响控制台。</p></div></div>
+            <div className="overview-health-grid">
+              <article className="overview-mini-card"><span>后端状态</span><strong>{healthLoading ? "检查中" : health ? (health.ok ? "正常" : "异常") : "暂时无法获取"}</strong></article>
+              <article className="overview-mini-card"><span>前端状态</span><strong>已加载</strong></article>
+              <article className="overview-mini-card"><span>数据状态</span><strong>{healthLoading ? "检查中" : health?.ok ? "通过后端接口读取" : "暂时无法获取"}</strong></article>
+            </div>
+          </section>
+
+          <section className="overview-section">
+            <div className="overview-section-head"><div><h2>内容统计</h2><p>数量仅来自现有真实 API。</p></div></div>
+            <div className="overview-stats-grid">
+              {[
+                ["articles", "文章数量", "📝"], ["plans", "计划数量", "🗓️"],
+                ["notes", "学习笔记数量", "📚"], ["weights", "体重记录数量", "⚖️"],
+                ["exercises", "运动记录数量", "🏃"], ["sleep", "睡眠记录数量", "🌙"],
+                ["diet", "饮食记录数量", "🍽️"],
+              ].map(([key, label, icon]) => (
+                <article className={`overview-stat-card is-${overviewStats[key].status}`} key={key}>
+                  <span className="overview-stat-icon">{icon}</span>
+                  <span>{label}</span>
+                  <strong>{overviewCount(key)}</strong>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <div className="overview-columns">
+            <section className="overview-section">
+              <div className="overview-section-head"><div><h2>最近更新</h2><p>最新 3 条真实版本记录。</p></div><a className="btn btn-sm" href="#/changelog">查看完整更新日志</a></div>
+              <div className="overview-updates">
+                {recentChanges.map((item) => <article key={item.version}><div><span className="changelog-version">{item.version}</span><span className="badge">{item.type}</span></div><h3>{item.title}</h3><time>{item.date}</time></article>)}
               </div>
             </section>
 
-            <section className="wb-card">
-              <h2>📊 内容统计</h2>
-              <ul className="admin-list">
-                <li>
-                  <span className="admin-item">已发布文章</span>
-                  <span className="badge badge-pub">{publishedCount}</span>
-                </li>
-                <li>
-                  <span className="admin-item">草稿</span>
-                  <span className="badge badge-draft">{draftCount}</span>
-                </li>
-                <li>
-                  <span className="admin-item">公开计划</span>
-                  <span className="badge badge-pub">{plans.length}</span>
-                </li>
-                <li>
-                  <span className="admin-item">已完成计划</span>
-                  <span className="badge badge-pub">{planDone}</span>
-                </li>
-                <li>
-                  <span className="admin-item">进行中计划</span>
-                  <span className="badge badge-doing">{planDoing}</span>
-                </li>
-                <li>
-                  <span className="admin-item">计划完成率</span>
-                  <span className="badge badge-pub">{planRate}%</span>
-                </li>
-                <li>
-                  <span className="admin-item">部署方式</span>
-                  <span className="badge badge-pub">Docker + GitHub Actions</span>
-                </li>
-              </ul>
-              <p className="muted" style={{ marginTop: 14 }}>
-                所有数量均来自真实数据库，不含假数据。
-              </p>
+            <section className="overview-section">
+              <div className="overview-section-head"><div><h2>快捷管理入口</h2><p>前往已有后台标签或前台页面。</p></div></div>
+              <div className="overview-actions">
+                <button onClick={startNewArticle}>✍️ 写文章</button><button onClick={() => setTab("library")}>🗃️ 文章管理</button>
+                <button onClick={() => setTab("plans")}>🗓️ 计划管理</button><button onClick={() => setTab("notes")}>📚 学习笔记管理</button>
+                <button onClick={() => setTab("about")}>🙋 关于我管理</button><a href="#/plans">查看计划页</a>
+                <a href="#/notes">查看学习笔记</a><a href="#/">查看网站首页</a><a href="#/changelog">查看更新日志</a>
+              </div>
             </section>
           </div>
-        </>
+
+          <section className="overview-reminder">
+            <h2>维护提醒</h2>
+            <ul><li>每次明显修改后同步更新 CHANGELOG.md 和 changelog.js</li><li>不提交 .env、数据库、上传文件和密钥</li><li>大改后端前先本地验证，再上线</li><li>没有真实数据时显示空状态，不写假数字</li></ul>
+          </section>
+        </div>
       )}
 
       {/* ============ 写文章 ============ */}

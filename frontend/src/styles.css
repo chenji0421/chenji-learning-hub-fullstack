@@ -5840,3 +5840,99 @@ details.tool-card[open] {
     padding: 12px;
   }
 }
+
+/* ============================================================
+   v1.5.14 移动端 tab / 选择栏横滑修复
+   选择栏自身横向滚动，页面主体不缩放、不横向撑爆
+   - 容器横滑：overflow-x: auto + flex-wrap: nowrap
+   - 选项不收缩：flex: 0 0 auto + white-space: nowrap
+   - 全局防整页横向滚动（不影响 tab 容器自身的横滑）
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 整页防横向溢出（body/html 兜底；tab 容器自身的 overflow-x:auto 不受影响） */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  /* ---------- 通用横滑容器：tab 栏自身滚动，页面不撑爆 ---------- */
+  .sprint-tabs,
+  .plan-view-switch,
+  .admin-tabs,
+  .filter-bar,
+  .filter-chips,
+  .nav-bar {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    flex-wrap: nowrap;
+  }
+
+  /* 横滑容器内选项：保持可读大小，不压缩不换行 */
+  .sprint-tab,
+  .plan-view-btn,
+  .admin-tab,
+  .filter-chip,
+  .nav-bar .btn,
+  .nav-label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 40px;
+  }
+
+  /* 月历导航：横滑时从居中改为左对齐，避免首项被裁 */
+  .nav-bar {
+    justify-content: flex-start;
+  }
+
+  /* 文章筛选行：label 固定左侧，chips 右侧横滑 */
+  .filter-row {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+  .filter-row > .filter-label {
+    flex: 0 0 auto;
+  }
+  .filter-row > .filter-chips {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* 计划页筛选组：label 固定左侧，chips 右侧横滑 */
+  .filter-group {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .filter-group > .filter-label {
+    flex: 0 0 auto;
+    padding-top: 10px;
+  }
+  .filter-group > .filter-bar {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+
+  /* 横滑容器滚动条：细条暗示可滑动 */
+  .sprint-tabs::-webkit-scrollbar,
+  .plan-view-switch::-webkit-scrollbar,
+  .admin-tabs::-webkit-scrollbar,
+  .filter-bar::-webkit-scrollbar,
+  .filter-chips::-webkit-scrollbar,
+  .nav-bar::-webkit-scrollbar {
+    height: 4px;
+  }
+  .sprint-tabs::-webkit-scrollbar-thumb,
+  .plan-view-switch::-webkit-scrollbar-thumb,
+  .admin-tabs::-webkit-scrollbar-thumb,
+  .filter-bar::-webkit-scrollbar-thumb,
+  .filter-chips::-webkit-scrollbar-thumb,
+  .nav-bar::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+}

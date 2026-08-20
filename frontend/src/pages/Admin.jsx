@@ -29,16 +29,25 @@ const EMPTY_PLAN = {
 };
 
 // 计划月历用的小工具（与 Plans.jsx 保持一致的配色约定）
-const STATUS_CLASS = { 未开始: "todo", 进行中: "pending", 已完成: "done", 暂停: "paused" };
-const STATUS_ORDER = ["未开始", "进行中", "已完成", "暂停"];
-// 后端状态值可能是中文也可能是英文，统一映射成中文显示（todo/doing/done/paused 兼容）
+const STATUS_CLASS = {
+  未开始: "todo",
+  进行中: "pending",
+  部分完成: "partial",
+  已完成: "done",
+  暂停: "paused",
+};
+const STATUS_ORDER = ["未开始", "进行中", "部分完成", "已完成", "暂停"];
+// 后端状态值可能是中文也可能是英文，统一映射成中文显示（todo/doing/partial/done/paused 兼容）
 const STATUS_LABEL = {
   未开始: "未开始",
   进行中: "进行中",
+  部分完成: "部分完成",
   已完成: "已完成",
   暂停: "暂停",
   todo: "未开始",
   doing: "进行中",
+  partially_completed: "部分完成",
+  partial: "部分完成",
   done: "已完成",
   paused: "暂停",
 };
@@ -337,7 +346,7 @@ export default function Admin({ user }) {
   const draftCount = articles.length - publishedCount;
 
   // 计划完成度：真实统计（状态映射与 Plans.jsx 一致，不使用假数据）
-  const planCounts = { 未开始: 0, 进行中: 0, 已完成: 0, 暂停: 0 };
+  const planCounts = { 未开始: 0, 进行中: 0, 部分完成: 0, 已完成: 0, 暂停: 0 };
   for (const p of plans) {
     const label = toStatusLabel(p.status);
     if (label in planCounts) planCounts[label] += 1;

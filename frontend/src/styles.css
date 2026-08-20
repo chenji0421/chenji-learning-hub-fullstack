@@ -33,6 +33,8 @@
   --success-soft: #e6f4ea;
   --warning: #9a6700;
   --warning-soft: #fff3cd;
+  --partial: #7c3aed;
+  --partial-soft: #f5f3ff;
 
   /* 圆角 */
   --radius-sm: 8px;
@@ -85,6 +87,8 @@
   --success-soft: rgba(46, 160, 67, 0.18);
   --warning: #e3a341;
   --warning-soft: rgba(187, 128, 9, 0.2);
+  --partial: #a78bfa;
+  --partial-soft: rgba(124, 58, 237, 0.18);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -1109,6 +1113,11 @@ h3 {
 .status.paused {
   background: var(--warning-soft);
   color: var(--warning);
+}
+
+.status.partial {
+  background: var(--partial-soft);
+  color: var(--partial);
 }
 
 .plan-goal {
@@ -3248,12 +3257,13 @@ details.tool-card[open] {
 }
 
 .ps-item.done .ps-num { color: var(--success); }
+.ps-item.partial .ps-num { color: var(--partial); }
 .ps-item.pending .ps-num { color: var(--primary); }
 .ps-item.todo .ps-num { color: var(--text-secondary); }
 .ps-item.paused .ps-num { color: var(--warning); }
 .ps-item.rate .ps-num { color: var(--primary); }
 
-/* CSS 柱状图：四类状态，柱高 = 当前数量 / 最大数量 * 100% */
+/* CSS 柱状图：五类状态，柱高 = 当前数量 / 最大数量 * 100% */
 .plan-chart {
   display: flex;
   align-items: flex-end;
@@ -3292,6 +3302,7 @@ details.tool-card[open] {
 
 .plan-chart-bar.todo { background: var(--text-secondary); }
 .plan-chart-bar.pending { background: var(--primary); }
+.plan-chart-bar.partial { background: var(--partial); }
 .plan-chart-bar.done { background: var(--success); }
 .plan-chart-bar.paused { background: var(--warning); }
 
@@ -3343,6 +3354,10 @@ details.tool-card[open] {
   .plan-stats-nums {
     grid-template-columns: repeat(3, 1fr);
     gap: var(--sp-2);
+  }
+
+  .ps-item.rate {
+    grid-column: 1 / -1;
   }
 
   .ps-item {

@@ -1,17 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
 
-// 计划状态 → CSS 类（与 Admin 后台一致）：未开始灰 / 进行中蓝 / 已完成绿 / 暂停橙
-const STATUS_ORDER = ["未开始", "进行中", "已完成", "暂停"];
-const STATUS_CLASS = { 未开始: "todo", 进行中: "pending", 已完成: "done", 暂停: "paused" };
-// 后端状态值可能是中文也可能是英文，统一映射成中文显示（todo/doing/done/paused 兼容）
+// 计划状态 → CSS 类（与 Admin 后台一致）：未开始灰 / 进行中蓝 / 部分完成紫 / 已完成绿 / 暂停橙
+const STATUS_ORDER = ["未开始", "进行中", "部分完成", "已完成", "暂停"];
+const STATUS_CLASS = {
+  未开始: "todo",
+  进行中: "pending",
+  部分完成: "partial",
+  已完成: "done",
+  暂停: "paused",
+};
+// 后端状态值可能是中文也可能是英文，统一映射成中文显示（todo/doing/partial/done/paused 兼容）
 const STATUS_LABEL = {
   未开始: "未开始",
   进行中: "进行中",
+  部分完成: "部分完成",
   已完成: "已完成",
   暂停: "暂停",
   todo: "未开始",
   doing: "进行中",
+  partially_completed: "部分完成",
+  partial: "部分完成",
   done: "已完成",
   paused: "暂停",
 };
@@ -425,7 +434,7 @@ export default function Plans({ user, hashPath }) {
   // ⚠️ 必须放在下方 early return（error / plans===null）之前——否则首渲染提前 return 会少执行一次 hook，
   //    下次渲染多出 planStats 这个 useMemo，React 报「Rendered more hooks」#310 直接白屏。
   const planStats = useMemo(() => {
-    const counts = { 未开始: 0, 进行中: 0, 已完成: 0, 暂停: 0 };
+    const counts = { 未开始: 0, 进行中: 0, 部分完成: 0, 已完成: 0, 暂停: 0 };
     for (const p of plans || []) {
       const label = toStatusLabel(p.status);
       if (label in counts) counts[label] += 1;
@@ -944,6 +953,10 @@ export default function Plans({ user, hashPath }) {
                   <span className="ps-num">{counts["已完成"]}</span>
                   <span className="ps-label">已完成</span>
                 </div>
+                <div className="ps-item partial">
+                  <span className="ps-num">{counts["部分完成"]}</span>
+                  <span className="ps-label">部分完成</span>
+                </div>
                 <div className="ps-item pending">
                   <span className="ps-num">{counts["进行中"]}</span>
                   <span className="ps-label">进行中</span>
@@ -982,7 +995,7 @@ export default function Plans({ user, hashPath }) {
               </div>
             </div>
             <p className="plan-stats-note">
-              达标程度说明：当前达标程度根据「已完成」计划占全部计划的比例计算。后续如果接入更细的每日任务完成记录，可以升级为更精确的统计。
+              达标程度说明：当前完成率仅根据「已完成」计划占全部计划的比例计算，「部分完成」暂不计入完成率。后续如果接入更细的每日任务完成记录，可以升级为更精确的进度统计。
             </p>
           </>
         )}

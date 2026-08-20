@@ -931,6 +931,22 @@ export default function Plans({ user, hashPath }) {
       cls: STATUS_CLASS[label],
     }));
     const maxCount = Math.max(...bars.map((b) => b.value));
+    // 扇形图：conic-gradient 按各状态占比切分（从 12 点顺时针累加），颜色与状态色统一；
+    // total 为 0 时走下面的空状态分支，不会进入这里，避免 0/0 与 NaN%
+    const DONUT_COLORS = {
+      未开始: "var(--text-secondary)",
+      进行中: "var(--primary)",
+      部分完成: "var(--partial)",
+      已完成: "var(--success)",
+      暂停: "var(--warning)",
+    };
+    let donutAcc = 0;
+    const donutStops = STATUS_ORDER.filter((l) => counts[l] > 0).map((l) => {
+      const from = donutAcc;
+      donutAcc += (counts[l] / total) * 360;
+      return `${DONUT_COLORS[l]} ${from.toFixed(2)}deg ${donutAcc.toFixed(2)}deg`;
+    });
+    const donutBackground = `conic-gradient(${donutStops.join(", ")})`;
     return (
       <section className="plan-stats">
         <div className="plan-stats-head">
@@ -943,6 +959,32 @@ export default function Plans({ user, hashPath }) {
           </div>
         ) : (
           <>
+            {/* 扇形图：五状态占比（conic-gradient 零依赖实现），图例含数量与百分比 */}
+            <div className="plan-donut">
+              <div
+                className="plan-donut-chart"
+                style={{ background: donutBackground }}
+                role="img"
+                aria-label="各计划状态占比扇形图"
+              >
+                <div className="plan-donut-hole">
+                  <span className="plan-donut-total">{total}</span>
+                  <span className="plan-donut-label">总计划</span>
+                </div>
+              </div>
+              <div className="plan-donut-legend">
+                {STATUS_ORDER.map((label) => (
+                  <div key={label} className="plan-donut-legend-item">
+                    <span className={`plan-donut-dot ${STATUS_CLASS[label]}`} />
+                    <span className="plan-donut-legend-name">{label}</span>
+                    <span className="plan-donut-legend-num">{counts[label]}</span>
+                    <span className="plan-donut-legend-pct">
+                      {total > 0 ? Math.round((counts[label] / total) * 100) : 0}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="plan-stats-body">
               <div className="plan-stats-nums">
                 <div className="ps-item">

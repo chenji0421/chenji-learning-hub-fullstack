@@ -3338,6 +3338,97 @@ details.tool-card[open] {
   text-align: center;
 }
 
+/* 扇形图：conic-gradient 五状态占比（零图表库），颜色与状态色 / 柱状图完全一致 */
+.plan-donut {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.plan-donut-chart {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.plan-donut-hole {
+  position: absolute;
+  inset: 22%;
+  background: var(--bg-subtle);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-donut-total {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.plan-donut-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.plan-donut-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 8px 18px;
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+  min-width: 0;
+}
+
+.plan-donut-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.plan-donut-dot.todo { background: var(--text-secondary); }
+.plan-donut-dot.pending { background: var(--primary); }
+.plan-donut-dot.partial { background: var(--partial); }
+.plan-donut-dot.done { background: var(--success); }
+.plan-donut-dot.paused { background: var(--warning); }
+
+.plan-donut-legend-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-donut-legend-num {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.plan-donut-legend-pct {
+  color: var(--text-secondary);
+  min-width: 40px;
+  text-align: right;
+}
+
 /* 移动端：统计区改单列，柱状图保持横向、紧凑布局 */
 @media (max-width: 720px) {
   .plan-stats-body {
@@ -3366,6 +3457,23 @@ details.tool-card[open] {
 
   .ps-num {
     font-size: 1.25rem;
+  }
+
+  .plan-donut {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-4);
+  }
+
+  .plan-donut-chart {
+    width: 130px;
+    height: 130px;
+  }
+
+  .plan-donut-legend {
+    width: 100%;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 12px;
   }
 }
 

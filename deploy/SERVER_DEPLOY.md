@@ -7,7 +7,7 @@ This folder contains the Docker Compose setup for deploying Chenji Learning Hub 
 Create an A record:
 
 ```text
-chenji.felixfu.xyz -> 47.242.176.227
+chenji.felixfu.xyz -> 116.62.206.232
 ```
 
 ## GitHub OAuth
@@ -65,8 +65,7 @@ Use `deploy/nginx-host-example.conf` as the host-level Nginx site, then add HTTP
 ```bash
 cd /opt/chenji-learning-hub
 git pull --ff-only
-chmod +x scripts/deploy-production.sh
-./scripts/deploy-production.sh
+bash scripts/deploy-production.sh
 ```
 
 ## GitHub Actions deploy
@@ -76,13 +75,16 @@ The repository includes `.github/workflows/deploy.yml`. It deploys automatically
 Add these repository secrets before relying on automatic deploys:
 
 ```text
+DEPLOY_HOST=116.62.206.232
 DEPLOY_USER=<server user>
+DEPLOY_PORT=22
 DEPLOY_PATH=/opt/chenji-learning-hub
 DEPLOY_SSH_KEY=<private deploy key>
 ```
 
-The server IP (`47.242.176.227`) and SSH port (`22`) are hardcoded in the workflow,
-so no `DEPLOY_HOST` / `DEPLOY_PORT` secrets are needed.
+首次自动部署时，如果目标目录存在但不是 Git 仓库，工作流会先把仓库克隆到临时目录。
+克隆成功后，旧目录会改名为带时间戳的 `.pre-git-*` 备份，原有 `.env` 会复制回新仓库。
+Docker 命名卷不会被删除或重建，因此 SQLite 和上传数据仍会保留。
 
 The server-side `.env` file must still be created manually and must not be committed.
 

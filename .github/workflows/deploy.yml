@@ -1,7 +1,11 @@
 name: Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
       - main
   workflow_dispatch:
@@ -17,12 +21,14 @@ jobs:
   deploy:
     name: Deploy to Felix server
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/chenji-learning-hub' }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_REPOSITORY: https://github.com/${{ github.repository }}.git
 
     steps:
       - name: Validate deployment secrets
@@ -50,10 +56,71 @@ jobs:
         run: |
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=20 \
             -i ~/.ssh/chenji_deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
+            "DEPLOY_PATH='$DEPLOY_PATH' DEPLOY_REPOSITORY='$DEPLOY_REPOSITORY' bash -s" <<'REMOTE'
           set -euo pipefail
+
+          DEPLOY_PATH="${DEPLOY_PATH%/}"
+          if [ "$DEPLOY_PATH" != "/opt/chenji-learning-hub" ]; then
+            echo "Refusing to bootstrap unexpected DEPLOY_PATH: $DEPLOY_PATH" >&2
+            echo "Set DEPLOY_PATH to /opt/chenji-learning-hub." >&2
+            exit 1
+          fi
+
+          if ! git -C "$DEPLOY_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            parent_dir="$(dirname "$DEPLOY_PATH")"
+            mkdir -p "$parent_dir"
+
+            staging_dir=""
+            for attempt in 1 2 3; do
+              staging_dir="$(mktemp -d "$parent_dir/.chenji-learning-hub-bootstrap.XXXXXX")"
+              if git -c http.version=HTTP/1.1 clone "$DEPLOY_REPOSITORY" "$staging_dir"; then
+                break
+              fi
+
+              if [ "$attempt" -eq 3 ]; then
+                echo "Initial repository clone failed after 3 attempts" >&2
+                exit 1
+              fi
+
+              echo "Initial clone failed; retrying in $((attempt * 5)) seconds..." >&2
+              sleep $((attempt * 5))
+            done
+
+            backup_dir=""
+            if [ -e "$DEPLOY_PATH" ]; then
+              backup_dir="${DEPLOY_PATH}.pre-git-$(date +%Y%m%d%H%M%S)"
+              mv "$DEPLOY_PATH" "$backup_dir"
+              echo "Existing deployment directory backed up to $backup_dir"
+            fi
+
+            if ! mv "$staging_dir" "$DEPLOY_PATH"; then
+              if [ -n "$backup_dir" ] && [ ! -e "$DEPLOY_PATH" ]; then
+                mv "$backup_dir" "$DEPLOY_PATH"
+              fi
+              echo "Failed to install the cloned repository" >&2
+              exit 1
+            fi
+
+            if [ -n "$backup_dir" ] && [ -f "$backup_dir/.env" ]; then
+              cp -p "$backup_dir/.env" "$DEPLOY_PATH/.env"
+              echo "Preserved the existing production .env"
+            fi
+          fi
+
           cd "$DEPLOY_PATH"
-          git pull --ff-only
-          chmod +x scripts/deploy-production.sh
-          ./scripts/deploy-production.sh
+          for attempt in 1 2 3; do
+            if git -c core.fileMode=false -c http.version=HTTP/1.1 pull --ff-only; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "git pull failed after 3 attempts" >&2
+              exit 1
+            fi
+
+            echo "git pull failed; retrying in $((attempt * 5)) seconds..." >&2
+            sleep $((attempt * 5))
+          done
+
+          bash scripts/deploy-production.sh
           REMOTE

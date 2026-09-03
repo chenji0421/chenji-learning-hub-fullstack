@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.5.18] — 2026-09-03 · 优化大陆服务器依赖构建
+
+### 优化
+- 前端 Docker 构建默认使用 npmmirror，并为 npm 下载增加超时与重试设置
+- 后端 Docker 构建默认使用阿里云 PyPI 镜像，并为 pip 下载增加超时与重试设置
+- Docker 基础镜像与 Compose 结构保持不变，现有容器数据卷不受影响
+
 ## [1.5.17] — 2026-09-03 · 自动部署不再依赖服务器访问 GitHub
 
 ### 修复

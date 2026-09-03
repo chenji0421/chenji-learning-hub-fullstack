@@ -15,6 +15,18 @@
 // - items：具体更新点
 export const changelog = [
   {
+    version: "v1.5.18",
+    date: "2026-09-03",
+    type: "部署",
+    title: "优化大陆服务器依赖构建",
+    summary: "前后端 Docker 构建改用国内 npm 与 PyPI 镜像，并增加下载超时和重试设置，降低杭州服务器构建时长与失败率。",
+    items: [
+      "前端 npm ci 默认使用 npmmirror，并增加下载重试和超时设置",
+      "后端 pip install 默认使用阿里云 PyPI 镜像，并增加下载重试和超时设置",
+      "不改变 Docker Compose 结构、数据库或现有容器数据卷"
+    ],
+  },
+  {
     version: "v1.5.17",
     date: "2026-09-03",
     type: "部署",

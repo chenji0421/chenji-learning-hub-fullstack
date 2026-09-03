@@ -591,6 +591,38 @@ h3 {
   margin: 0 0 var(--sp-6);
 }
 
+.home-notice {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin: 18px 0 var(--sp-7);
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--primary) 9%, var(--card));
+  box-shadow: var(--shadow-sm);
+}
+
+.home-notice strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.home-notice p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.notice-label {
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 /* ---------- 按钮 ---------- */
 .btn {
   display: inline-flex;

@@ -121,6 +121,14 @@ export default function Home({ user }) {
         </div>
       </section>
 
+      <section className="home-notice" aria-label="站点更新">
+        <span className="notice-label">站点更新</span>
+        <div>
+          <strong>已迁移到 Felix 的新服务器</strong>
+          <p>当前站点运行在杭州 ECS 上，后续 push 到 GitHub 后会自动部署到新环境。</p>
+        </div>
+      </section>
+
       {/* 此刻 / 站点状态面板：全部来自真实 API 或真实配置，不伪造数字 */}
       <section className="now-panel">
         <div className="now-panel-head">

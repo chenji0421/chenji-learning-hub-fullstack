@@ -4,6 +4,16 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.5.17] — 2026-09-03 · 自动部署不再依赖服务器访问 GitHub
+
+### 修复
+- GitHub Actions 在 Runner 上打包已通过 CI 的源码，并通过现有 SSH 通道上传到服务器
+- 杭州 ECS 不再执行 `git clone` 或 `git pull`，彻底绕开服务器连接 GitHub 超时与 GnuTLS 中断
+- 上传包在替换目录前会校验内容，旧源码目录保留为带时间戳的备份，生产 `.env` 自动恢复
+
+### 未改动
+- 不删除或重建 Docker 命名卷，不修改 SQLite、上传文件、OAuth Secret 或其他生产数据
+
 ## [1.5.16] — 2026-09-03 · 修复新服务器首次自动部署
 
 ### 修复

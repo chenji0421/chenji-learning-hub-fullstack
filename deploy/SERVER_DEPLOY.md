@@ -82,9 +82,9 @@ DEPLOY_PATH=/opt/chenji-learning-hub
 DEPLOY_SSH_KEY=<private deploy key>
 ```
 
-首次自动部署时，如果目标目录存在但不是 Git 仓库，工作流会先把仓库克隆到临时目录。
-克隆成功后，旧目录会改名为带时间戳的 `.pre-git-*` 备份，原有 `.env` 会复制回新仓库。
-Docker 命名卷不会被删除或重建，因此 SQLite 和上传数据仍会保留。
+自动部署不要求服务器连接 GitHub。GitHub Actions 会检出已经通过 CI 的代码，打包后通过 SSH 上传到服务器。
+上传的压缩包校验成功后，旧目录会改名为带时间戳的 `.pre-release-*` 备份，原有 `.env` 会复制回新目录。
+部署目录始终保持 `/opt/chenji-learning-hub`，Docker 命名卷不会被删除或重建，因此 SQLite 和上传数据仍会保留。
 
 The server-side `.env` file must still be created manually and must not be committed.
 

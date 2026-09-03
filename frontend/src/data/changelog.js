@@ -15,6 +15,19 @@
 // - items：具体更新点
 export const changelog = [
   {
+    version: "v1.5.17",
+    date: "2026-09-03",
+    type: "部署",
+    title: "自动部署不再依赖服务器访问 GitHub",
+    summary: "GitHub Actions 改为在 Runner 上打包已通过 CI 的代码，再通过 SSH 上传到杭州服务器，彻底绕开 ECS 访问 GitHub 超时的问题。",
+    items: [
+      "GitHub Actions 在 Runner 上生成只包含已跟踪源码的发布包",
+      "发布包通过现有 SSH 通道上传，服务器不再执行 git clone 或 git pull",
+      "替换前校验发布包，并把原源码目录保留为带时间戳的备份",
+      "自动保留生产 .env，不删除 Docker 命名卷、SQLite 或上传数据"
+    ],
+  },
+  {
     version: "v1.5.16",
     date: "2026-09-03",
     type: "部署",

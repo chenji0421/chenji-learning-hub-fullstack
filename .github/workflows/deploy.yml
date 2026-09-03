@@ -28,9 +28,17 @@ jobs:
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/chenji-learning-hub' }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-      DEPLOY_REPOSITORY: https://github.com/${{ github.repository }}.git
+      RELEASE_ARCHIVE: /tmp/chenji-release-${{ github.run_id }}.tar.gz
 
     steps:
+      - name: Checkout release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+
+      - name: Package release
+        run: git archive --format=tar.gz --output="$RUNNER_TEMP/chenji-release.tar.gz" HEAD
+
       - name: Validate deployment secrets
         run: |
           test -n "$DEPLOY_HOST" || (echo "DEPLOY_HOST is required" && exit 1)
@@ -52,11 +60,18 @@ jobs:
             -i ~/.ssh/chenji_deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "echo ssh-ok"
 
+      - name: Upload release
+        run: |
+          scp -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=20 \
+            -i ~/.ssh/chenji_deploy_key -P "$DEPLOY_PORT" \
+            "$RUNNER_TEMP/chenji-release.tar.gz" \
+            "$DEPLOY_USER@$DEPLOY_HOST:$RELEASE_ARCHIVE"
+
       - name: Deploy on server
         run: |
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=20 \
             -i ~/.ssh/chenji_deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "DEPLOY_PATH='$DEPLOY_PATH' DEPLOY_REPOSITORY='$DEPLOY_REPOSITORY' bash -s" <<'REMOTE'
+            "DEPLOY_PATH='$DEPLOY_PATH' RELEASE_ARCHIVE='$RELEASE_ARCHIVE' bash -s" <<'REMOTE'
           set -euo pipefail
 
           DEPLOY_PATH="${DEPLOY_PATH%/}"
@@ -66,61 +81,57 @@ jobs:
             exit 1
           fi
 
-          if ! git -C "$DEPLOY_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-            parent_dir="$(dirname "$DEPLOY_PATH")"
-            mkdir -p "$parent_dir"
+          if [ ! -f "$RELEASE_ARCHIVE" ]; then
+            echo "Uploaded release archive not found: $RELEASE_ARCHIVE" >&2
+            exit 1
+          fi
 
-            staging_dir=""
-            for attempt in 1 2 3; do
-              staging_dir="$(mktemp -d "$parent_dir/.chenji-learning-hub-bootstrap.XXXXXX")"
-              if git -c http.version=HTTP/1.1 clone "$DEPLOY_REPOSITORY" "$staging_dir"; then
-                break
-              fi
+          tar -tzf "$RELEASE_ARCHIVE" >/dev/null
 
-              if [ "$attempt" -eq 3 ]; then
-                echo "Initial repository clone failed after 3 attempts" >&2
-                exit 1
-              fi
+          parent_dir="$(dirname "$DEPLOY_PATH")"
+          mkdir -p "$parent_dir"
+          staging_dir="$(mktemp -d "$parent_dir/.chenji-learning-hub-release.XXXXXX")"
+          tar -xzf "$RELEASE_ARCHIVE" -C "$staging_dir"
 
-              echo "Initial clone failed; retrying in $((attempt * 5)) seconds..." >&2
-              sleep $((attempt * 5))
-            done
-
-            backup_dir=""
-            if [ -e "$DEPLOY_PATH" ]; then
-              backup_dir="${DEPLOY_PATH}.pre-git-$(date +%Y%m%d%H%M%S)"
-              mv "$DEPLOY_PATH" "$backup_dir"
-              echo "Existing deployment directory backed up to $backup_dir"
-            fi
-
-            if ! mv "$staging_dir" "$DEPLOY_PATH"; then
-              if [ -n "$backup_dir" ] && [ ! -e "$DEPLOY_PATH" ]; then
-                mv "$backup_dir" "$DEPLOY_PATH"
-              fi
-              echo "Failed to install the cloned repository" >&2
+          for required_file in docker-compose.server.yml scripts/deploy-production.sh; do
+            if [ ! -f "$staging_dir/$required_file" ]; then
+              echo "Release archive is missing $required_file" >&2
               exit 1
             fi
+          done
 
-            if [ -n "$backup_dir" ] && [ -f "$backup_dir/.env" ]; then
-              cp -p "$backup_dir/.env" "$DEPLOY_PATH/.env"
-              echo "Preserved the existing production .env"
+          backup_dir=""
+          if [ -e "$DEPLOY_PATH" ]; then
+            backup_dir="${DEPLOY_PATH}.pre-release-$(date +%Y%m%d%H%M%S)"
+            mv "$DEPLOY_PATH" "$backup_dir"
+            echo "Previous source directory backed up to $backup_dir"
+          fi
+
+          if ! mv "$staging_dir" "$DEPLOY_PATH"; then
+            if [ -n "$backup_dir" ] && [ ! -e "$DEPLOY_PATH" ]; then
+              mv "$backup_dir" "$DEPLOY_PATH"
             fi
+            echo "Failed to install the uploaded release" >&2
+            exit 1
+          fi
+
+          if [ -n "$backup_dir" ] && [ -f "$backup_dir/.env" ]; then
+            cp -p "$backup_dir/.env" "$DEPLOY_PATH/.env"
+            echo "Preserved the existing production .env"
+          fi
+
+          if [ ! -f "$DEPLOY_PATH/.env" ]; then
+            echo "Missing production .env in $DEPLOY_PATH" >&2
+            if [ -n "$backup_dir" ]; then
+              failed_dir="${DEPLOY_PATH}.failed-release-$(date +%Y%m%d%H%M%S)"
+              mv "$DEPLOY_PATH" "$failed_dir"
+              mv "$backup_dir" "$DEPLOY_PATH"
+              echo "Restored the previous deployment directory; failed release kept at $failed_dir" >&2
+            fi
+            exit 1
           fi
 
           cd "$DEPLOY_PATH"
-          for attempt in 1 2 3; do
-            if git -c core.fileMode=false -c http.version=HTTP/1.1 pull --ff-only; then
-              break
-            fi
-
-            if [ "$attempt" -eq 3 ]; then
-              echo "git pull failed after 3 attempts" >&2
-              exit 1
-            fi
-
-            echo "git pull failed; retrying in $((attempt * 5)) seconds..." >&2
-            sleep $((attempt * 5))
-          done
-
           bash scripts/deploy-production.sh
+          rm -f "$RELEASE_ARCHIVE"
           REMOTE

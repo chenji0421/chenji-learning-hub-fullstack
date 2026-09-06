@@ -58,18 +58,14 @@ else
 fi
 
 echo "=== Candidate backups ==="
-search_roots=()
-for possible_root in /opt /root /home /mnt /data /srv /backup /var/backups /tmp; do
-  if [ -d "$possible_root" ]; then
-    search_roots+=("$possible_root")
-  fi
-done
-
 while IFS= read -r backup_path; do
   if [ "$(head -c 16 "$backup_path" 2>/dev/null || true)" = "SQLite format 3" ]; then
     inspect_db "$backup_path"
   fi
-done < <(find "${search_roots[@]}" -xdev -maxdepth 10 -type f -size +1k -size -2G -print 2>/dev/null | sort || true)
+done < <(find / -xdev \
+  \( -path /proc -o -path /sys -o -path /dev -o -path /run -o -path /usr -o -path /snap -o -path /var/lib/docker/overlay2 \) -prune -o \
+  -type f \( -iname '*.db' -o -iname '*.sqlite' -o -iname '*.sqlite3' \) -size +1k -size -2G -print \
+  2>/dev/null | sort || true)
 
 while IFS= read -r archive_path; do
   if tar -tzf "$archive_path" 2>/dev/null | grep -Eqi 'chenji_hub\.db|chenji_data|uploads/notes'; then
@@ -77,5 +73,7 @@ while IFS= read -r archive_path; do
     echo "backup=$archive_path size=$archive_size"
     echo "::notice title=Chenji backup archive::path=$archive_path size=$archive_size"
   fi
-done < <(find "${search_roots[@]}" -xdev -maxdepth 10 -type f \
-  \( -iname '*.tar.gz' -o -iname '*.tgz' \) -print 2>/dev/null | sort || true)
+done < <(find / -xdev \
+  \( -path /proc -o -path /sys -o -path /dev -o -path /run -o -path /usr -o -path /snap -o -path /var/lib/docker/overlay2 \) -prune -o \
+  -type f \( -iname '*.tar.gz' -o -iname '*.tgz' \) -print \
+  2>/dev/null | sort || true)

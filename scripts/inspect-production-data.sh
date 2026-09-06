@@ -62,9 +62,17 @@ else
 fi
 
 echo "=== Candidate backups ==="
-while IFS= read -r backup_line; do
-  echo "$backup_line"
-  echo "::notice title=Chenji backup candidate::$backup_line"
-done < <(find /opt /root /home -maxdepth 8 -type f \
-  \( -iname '*chenji*.db' -o -iname '*chenji*.sqlite*' -o -iname '*chenji*data*' -o -iname 'chenji_data.tar.gz' \) \
-  -printf 'backup=%p size=%s modified=%TY-%Tm-%TdT%TH:%TM:%TS\n' 2>/dev/null | sort || true)
+while IFS= read -r backup_path; do
+  case "$backup_path" in
+    *.db|*.sqlite|*.sqlite3)
+      inspect_db "$backup_path"
+      ;;
+    *)
+      backup_size="$(stat -c '%s' "$backup_path")"
+      echo "backup=$backup_path size=$backup_size"
+      echo "::notice title=Chenji backup candidate::path=$backup_path size=$backup_size"
+      ;;
+  esac
+done < <(find /opt /root /home -maxdepth 8 -type f -ipath '*chenji*' \
+  \( -iname '*.db' -o -iname '*.sqlite' -o -iname '*.sqlite3' -o -iname '*.tar.gz' -o -iname '*.tgz' -o -iname '*.zip' \) \
+  -print 2>/dev/null | sort || true)

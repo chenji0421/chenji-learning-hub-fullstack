@@ -132,6 +132,7 @@ jobs:
           fi
 
           cd "$DEPLOY_PATH"
+          bash scripts/inspect-production-data.sh
           bash scripts/deploy-production.sh
           rm -f "$RELEASE_ARCHIVE"
           REMOTE

@@ -36,7 +36,9 @@ try:
 except Exception as exc:
     result["error"] = type(exc).__name__
 
-print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+payload = json.dumps(result, ensure_ascii=False, sort_keys=True)
+print(payload)
+print(f"::notice title=Chenji database inventory::{payload}")
 PY
 }
 
@@ -50,6 +52,7 @@ else
   for volume_name in "${chenji_volumes[@]}"; do
     mountpoint="$(docker volume inspect --format '{{.Mountpoint}}' "$volume_name")"
     echo "volume=$volume_name mountpoint=$mountpoint"
+    echo "::notice title=Chenji data volume::name=$volume_name"
     while IFS= read -r db_path; do
       inspect_db "$db_path"
     done < <(find "$mountpoint" -maxdepth 5 -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print)
@@ -59,6 +62,9 @@ else
 fi
 
 echo "=== Candidate backups under /opt ==="
-find /opt -maxdepth 6 -type f \
+while IFS= read -r backup_line; do
+  echo "$backup_line"
+  echo "::notice title=Chenji backup candidate::$backup_line"
+done < <(find /opt -maxdepth 6 -type f \
   \( -iname '*chenji*.db' -o -iname '*chenji*.sqlite*' -o -iname '*chenji*data*.tar.gz' -o -iname 'chenji_data.tar.gz' \) \
-  -printf 'backup=%p size=%s modified=%TY-%Tm-%TdT%TH:%TM:%TS\n' 2>/dev/null | sort || true
+  -printf 'backup=%p size=%s modified=%TY-%Tm-%TdT%TH:%TM:%TS\n' 2>/dev/null | sort || true)

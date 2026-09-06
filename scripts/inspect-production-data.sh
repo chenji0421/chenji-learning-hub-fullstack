@@ -42,22 +42,18 @@ print(f"::notice title=Chenji database inventory::{payload}")
 PY
 }
 
-mapfile -t chenji_volumes < <(
-  docker volume ls --format '{{.Name}}' | grep -Ei 'chenji.*data|data.*chenji' || true
-)
+mapfile -t data_volumes < <(docker volume ls --format '{{.Name}}' | sort)
 
-if [ "${#chenji_volumes[@]}" -eq 0 ]; then
-  echo "No Chenji data volumes found."
+if [ "${#data_volumes[@]}" -eq 0 ]; then
+  echo "No Docker data volumes found."
 else
-  for volume_name in "${chenji_volumes[@]}"; do
+  for volume_name in "${data_volumes[@]}"; do
     mountpoint="$(docker volume inspect --format '{{.Mountpoint}}' "$volume_name")"
-    echo "volume=$volume_name mountpoint=$mountpoint"
-    echo "::notice title=Chenji data volume::name=$volume_name"
     while IFS= read -r db_path; do
+      echo "volume=$volume_name mountpoint=$mountpoint"
+      echo "::notice title=SQLite data volume::name=$volume_name"
       inspect_db "$db_path"
     done < <(find "$mountpoint" -maxdepth 5 -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print)
-    find "$mountpoint" -maxdepth 5 -type f ! \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) \
-      -printf 'data-file=%p size=%s\n' | sort
   done
 fi
 

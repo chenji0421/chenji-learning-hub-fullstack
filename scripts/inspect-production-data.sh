@@ -73,6 +73,15 @@ while IFS= read -r backup_path; do
       echo "::notice title=Chenji backup candidate::path=$backup_path size=$backup_size"
       ;;
   esac
-done < <(find /opt /root /home -maxdepth 8 -type f -ipath '*chenji*' \
-  \( -iname '*.db' -o -iname '*.sqlite' -o -iname '*.sqlite3' -o -iname '*.tar.gz' -o -iname '*.tgz' -o -iname '*.zip' \) \
+done < <(find /opt /root /home /var/backups /tmp -xdev -maxdepth 10 -type f \
+  \( -iname '*.db' -o -iname '*.sqlite' -o -iname '*.sqlite3' \) \
   -print 2>/dev/null | sort || true)
+
+while IFS= read -r archive_path; do
+  if tar -tzf "$archive_path" 2>/dev/null | grep -Eqi 'chenji_hub\.db|chenji_data|uploads/notes'; then
+    archive_size="$(stat -c '%s' "$archive_path")"
+    echo "backup=$archive_path size=$archive_size"
+    echo "::notice title=Chenji backup archive::path=$archive_path size=$archive_size"
+  fi
+done < <(find /opt /root /home /var/backups /tmp -xdev -maxdepth 10 -type f \
+  \( -iname '*.tar.gz' -o -iname '*.tgz' \) -print 2>/dev/null | sort || true)

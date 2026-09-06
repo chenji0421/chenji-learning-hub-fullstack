@@ -61,10 +61,10 @@ else
   done
 fi
 
-echo "=== Candidate backups under /opt ==="
+echo "=== Candidate backups ==="
 while IFS= read -r backup_line; do
   echo "$backup_line"
   echo "::notice title=Chenji backup candidate::$backup_line"
-done < <(find /opt -maxdepth 6 -type f \
-  \( -iname '*chenji*.db' -o -iname '*chenji*.sqlite*' -o -iname '*chenji*data*.tar.gz' -o -iname 'chenji_data.tar.gz' \) \
+done < <(find /opt /root /home -maxdepth 8 -type f \
+  \( -iname '*chenji*.db' -o -iname '*chenji*.sqlite*' -o -iname '*chenji*data*' -o -iname 'chenji_data.tar.gz' \) \
   -printf 'backup=%p size=%s modified=%TY-%Tm-%TdT%TH:%TM:%TS\n' 2>/dev/null | sort || true)

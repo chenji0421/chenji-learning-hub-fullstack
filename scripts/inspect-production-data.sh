@@ -36,9 +36,17 @@ try:
 except Exception as exc:
     result["error"] = type(exc).__name__
 
-payload = json.dumps(result, ensure_ascii=False, sort_keys=True)
-print(payload)
-print(f"::notice title=Chenji database inventory::{payload}")
+signature_tables = {
+    "articles",
+    "plans",
+    "note_items",
+    "plan_time_blocks",
+    "plan_completion_records",
+}
+if signature_tables.intersection(result["tables"]):
+    payload = json.dumps(result, ensure_ascii=False, sort_keys=True)
+    print(payload)
+    print(f"::notice title=Chenji database inventory::{payload}")
 PY
 }
 
@@ -58,14 +66,24 @@ else
 fi
 
 echo "=== Candidate backups ==="
+mapfile -t filesystem_roots < <(
+  findmnt -rn -t ext2,ext3,ext4,xfs,btrfs,f2fs,zfs -o TARGET | sort -u
+)
+if [ "${#filesystem_roots[@]}" -eq 0 ]; then
+  filesystem_roots=(/)
+fi
+
 while IFS= read -r backup_path; do
   if [ "$(head -c 16 "$backup_path" 2>/dev/null || true)" = "SQLite format 3" ]; then
     inspect_db "$backup_path"
   fi
-done < <(find / -xdev \
-  \( -path /proc -o -path /sys -o -path /dev -o -path /run -o -path /usr -o -path /snap -o -path /var/lib/docker/overlay2 \) -prune -o \
-  -type f \( -iname '*.db' -o -iname '*.sqlite' -o -iname '*.sqlite3' \) -size +1k -size -2G -print \
-  2>/dev/null | sort || true)
+done < <(
+  for filesystem_root in "${filesystem_roots[@]}"; do
+    find "$filesystem_root" -xdev -type f \
+      \( -iname '*.db' -o -iname '*.sqlite' -o -iname '*.sqlite3' \) \
+      -size +1k -size -2G -print 2>/dev/null || true
+  done | sort -u
+)
 
 while IFS= read -r archive_path; do
   if tar -tzf "$archive_path" 2>/dev/null | grep -Eqi 'chenji_hub\.db|chenji_data|uploads/notes'; then
@@ -73,7 +91,9 @@ while IFS= read -r archive_path; do
     echo "backup=$archive_path size=$archive_size"
     echo "::notice title=Chenji backup archive::path=$archive_path size=$archive_size"
   fi
-done < <(find / -xdev \
-  \( -path /proc -o -path /sys -o -path /dev -o -path /run -o -path /usr -o -path /snap -o -path /var/lib/docker/overlay2 \) -prune -o \
-  -type f \( -iname '*.tar.gz' -o -iname '*.tgz' \) -print \
-  2>/dev/null | sort || true)
+done < <(
+  for filesystem_root in "${filesystem_roots[@]}"; do
+    find "$filesystem_root" -xdev -type f \
+      \( -iname '*.tar.gz' -o -iname '*.tgz' \) -print 2>/dev/null || true
+  done | sort -u
+)
